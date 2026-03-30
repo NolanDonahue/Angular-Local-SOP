@@ -7,9 +7,17 @@ const projectRoot = resolve(__dirname, '..');
 
 const sopJsonPath = resolve(projectRoot, 'src/assets/content/sop.json');
 const glossaryJsonPath = resolve(projectRoot, 'src/assets/content/glossary.json');
+const workspaceConfigPresetsJsonPath = resolve(
+  projectRoot,
+  'src/assets/content/workspace-config-presets.json',
+);
 
 const sopOutputPath = resolve(projectRoot, 'src/app/core/data/sop.data.ts');
 const glossaryOutputPath = resolve(projectRoot, 'src/app/core/data/glossary.data.ts');
+const workspaceConfigPresetsOutputPath = resolve(
+  projectRoot,
+  'src/app/core/data/workspace-config-presets.data.ts',
+);
 
 function toTsModule(constantName, data, sourcePath) {
   const json = JSON.stringify(data, null, 2);
@@ -27,7 +35,11 @@ async function writeGenerated(path, content) {
 }
 
 async function main() {
-  const [sopData, glossaryData] = await Promise.all([readJson(sopJsonPath), readJson(glossaryJsonPath)]);
+  const [sopData, glossaryData, workspaceConfigPresets] = await Promise.all([
+    readJson(sopJsonPath),
+    readJson(glossaryJsonPath),
+    readJson(workspaceConfigPresetsJsonPath),
+  ]);
 
   await Promise.all([
     writeGenerated(sopOutputPath, toTsModule('SOP_DATA', sopData, 'src/assets/content/sop.json')),
@@ -35,9 +47,17 @@ async function main() {
       glossaryOutputPath,
       toTsModule('GLOSSARY_DATA', glossaryData, 'src/assets/content/glossary.json'),
     ),
+    writeGenerated(
+      workspaceConfigPresetsOutputPath,
+      toTsModule(
+        'WORKSPACE_CONFIG_PRESETS_DATA',
+        workspaceConfigPresets,
+        'src/assets/content/workspace-config-presets.json',
+      ),
+    ),
   ]);
 
-  console.log('Bundled SOP and glossary data into TypeScript constants.');
+  console.log('Bundled SOP, glossary, and workspace config presets into TypeScript constants.');
 }
 
 main().catch((error) => {

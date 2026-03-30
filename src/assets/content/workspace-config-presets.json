@@ -1,0 +1,18 @@
+[
+  {
+    "id": "budget-planning-core",
+    "label": "Budget Planning Core",
+    "moduleIds": [
+      "annual-budget-cycle",
+      "department-requests"
+    ]
+  },
+  {
+    "id": "risk-and-recovery",
+    "label": "Risk and Recovery",
+    "moduleIds": [
+      "encumbrance-closeout-pitfalls",
+      "midyear-revenue-collapse"
+    ]
+  }
+]

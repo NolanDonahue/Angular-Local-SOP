@@ -61,6 +61,10 @@ export class ViewStateService {
     this._selectedModuleIds.update((ids) => ids.filter((existingId) => existingId !== id));
   }
 
+  applySelection(ids: string[]): void {
+    this._selectedModuleIds.set([...new Set(ids)]);
+  }
+
   clearSelections(): void {
     this._selectedModuleIds.set([]);
   }
