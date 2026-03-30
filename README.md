@@ -2,13 +2,6 @@
 
 SopViewer is a portable Angular SOP workspace for organizing procedures, searching content, and exporting selected modules to Word.
 
-## What changed in this version
-
-- SOP and glossary content are bundled into TypeScript at build time (`npm run bundle-data`), so runtime JSON fetches are not required.
-- Portable builds support `file://` usage with routing fallbacks in `src/main.ts`.
-- A file-static build option is available to emit a single non-module app bundle for environments with stricter static hosting constraints.
-- Theme preference (dark/light) is persisted in browser storage.
-
 ## Content source files
 
 All editable business content stays in JSON:
