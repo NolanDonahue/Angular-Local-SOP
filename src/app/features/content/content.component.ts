@@ -4,7 +4,7 @@ import { ContentSegment } from '../../core/models/sop.models';
 import { SopRepositoryService } from '../../core/services/sop-repository.service';
 
 @Component({
-  selector: 'app-content',
+  selector: 'app-sop-content',
   standalone: true,
   imports: [MatTooltipModule],
   template: `
@@ -27,7 +27,7 @@ import { SopRepositoryService } from '../../core/services/sop-repository.service
     }
   `,
 })
-export class ContentComponent {
+export class SopContentComponent {
   @Input({ required: true }) segments: ContentSegment[] = [];
 
   readonly repository = inject(SopRepositoryService);

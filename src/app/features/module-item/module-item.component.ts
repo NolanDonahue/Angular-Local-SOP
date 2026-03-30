@@ -3,12 +3,12 @@ import { MatChipsModule } from '@angular/material/chips';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { SopModule } from '../../core/models/sop.models';
 import { ViewStateService } from '../../core/services/view-state.service';
-import { ContentComponent } from '../content/content.component';
+import { SopContentComponent } from '../content/content.component';
 
 @Component({
   selector: 'app-module-item',
   standalone: true,
-  imports: [MatExpansionModule, MatChipsModule, ContentComponent],
+  imports: [MatExpansionModule, MatChipsModule, SopContentComponent],
   template: `
     <mat-expansion-panel
       [class.nested-panel]="nested"
@@ -23,7 +23,7 @@ import { ContentComponent } from '../content/content.component';
         </mat-panel-description>
       </mat-expansion-panel-header>
 
-      <p><app-content [segments]="module.content" /></p>
+      <p><app-sop-content [segments]="module.content" /></p>
 
       @if (module.tags?.length) {
         <div class="tags">

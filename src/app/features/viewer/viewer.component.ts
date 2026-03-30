@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, effect, inject } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { map } from 'rxjs';
@@ -12,7 +13,14 @@ import { ModuleItemComponent } from '../module-item/module-item.component';
 @Component({
   selector: 'app-viewer',
   standalone: true,
-  imports: [CommonModule, RouterLink, MatButtonModule, MatProgressBarModule, ModuleItemComponent],
+  imports: [
+    CommonModule,
+    RouterLink,
+    MatButtonModule,
+    MatIconModule,
+    MatProgressBarModule,
+    ModuleItemComponent,
+  ],
   template: `
     <main class="page">
       <a mat-stroked-button routerLink="/">Back to all SOPs</a>
@@ -23,7 +31,10 @@ import { ModuleItemComponent } from '../module-item/module-item.component';
         <h1>{{ module()!.title }}</h1>
         <app-module-item [module]="module()!" />
       } @else {
-        <p>Unable to find that SOP module.</p>
+        <section class="empty-state" aria-live="polite">
+          <mat-icon>search_off</mat-icon>
+          <p>SOP not found. Please select an item from the menu.</p>
+        </section>
       }
     </main>
   `,
@@ -34,6 +45,28 @@ import { ModuleItemComponent } from '../module-item/module-item.component';
       padding: 1rem;
       display: grid;
       gap: 1rem;
+    }
+
+    .empty-state {
+      display: grid;
+      justify-items: center;
+      gap: 0.5rem;
+      border: 1px dashed var(--border-subtle);
+      border-radius: 12px;
+      background: var(--surface-1);
+      padding: 2rem 1rem;
+      color: var(--text-muted);
+      text-align: center;
+    }
+
+    .empty-state mat-icon {
+      width: 36px;
+      height: 36px;
+      font-size: 36px;
+    }
+
+    .empty-state p {
+      margin: 0;
     }
   `,
 })

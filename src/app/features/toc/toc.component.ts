@@ -6,6 +6,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { RouterLink } from '@angular/router';
 import { ExportService } from '../../core/services/export.service';
 import { SopModule } from '../../core/models/sop.models';
 import { SopRepositoryService } from '../../core/services/sop-repository.service';
@@ -24,6 +25,7 @@ import { SidebarTreeComponent } from '../sidebar-tree/sidebar-tree.component';
     MatInputModule,
     MatProgressBarModule,
     MatIconModule,
+    RouterLink,
     ModuleItemComponent,
     SidebarTreeComponent,
   ],
@@ -48,6 +50,7 @@ import { SidebarTreeComponent } from '../sidebar-tree/sidebar-tree.component';
             }
           </mat-form-field>
           <button mat-stroked-button (click)="clearWorkspace()">Clear Workspace</button>
+          <a mat-stroked-button routerLink="/glossary">Glossary</a>
           <button
             mat-flat-button
             color="primary"

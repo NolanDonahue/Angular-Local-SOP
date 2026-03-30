@@ -7,6 +7,11 @@ export const routes: Routes = [
       import('./features/toc/toc.component').then((m) => m.TocComponent),
   },
   {
+    path: 'glossary',
+    loadComponent: () =>
+      import('./features/glossary/glossary.component').then((m) => m.GlossaryComponent),
+  },
+  {
     path: 'sop/:id',
     loadComponent: () =>
       import('./features/viewer/viewer.component').then((m) => m.ViewerComponent),
