@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import multer from 'multer';
+import sharp from 'sharp';
 import { access, mkdir, readFile, writeFile } from 'node:fs/promises';
 import { resolve, dirname, extname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -24,29 +25,26 @@ async function sendJsonError(res, error, status = 500) {
 }
 
 function slugifyBaseName(fileName) {
-  const ext = extname(fileName);
+  const ext = extname(fileName || '');
   const base = fileName.slice(0, fileName.length - ext.length);
   const slug = base
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-|-$/g, '');
-  return {
-    base: slug || 'image',
-    ext: ext.toLowerCase() || '.png',
-  };
+  return slug || 'image';
 }
 
 async function createUniqueImagePath(originalName) {
   await mkdir(imagesDir, { recursive: true });
-  const { base, ext } = slugifyBaseName(originalName);
+  const base = slugifyBaseName(originalName);
   let attempt = 1;
-  let candidate = `${base}${ext}`;
+  let candidate = `${base}.jpg`;
   let target = resolve(imagesDir, candidate);
   while (true) {
     try {
       await access(target);
       attempt += 1;
-      candidate = `${base}-${attempt}${ext}`;
+      candidate = `${base}-${attempt}.jpg`;
       target = resolve(imagesDir, candidate);
     } catch {
       return { fileName: candidate, path: target };
@@ -103,7 +101,17 @@ app.post('/api/assets/images', upload.single('image'), async (req, res) => {
     }
 
     const { fileName, path } = await createUniqueImagePath(file.originalname);
-    await writeFile(path, file.buffer);
+    await sharp(file.buffer)
+      .resize({
+        width: 1024,
+        withoutEnlargement: true,
+      })
+      .jpeg({
+        quality: 80,
+        progressive: true,
+        force: true,
+      })
+      .toFile(path);
 
     const alt = fileName
       .replace(/\.[^.]+$/, '')
@@ -115,9 +123,11 @@ app.post('/api/assets/images', upload.single('image'), async (req, res) => {
       success: true,
       src: `assets/images/${fileName}`,
       alt: alt || 'SOP Image',
+      fileName,
     });
   } catch (error) {
-    await sendJsonError(res, error);
+    console.error('Image processing error:', error);
+    await sendJsonError(res, 'Failed to process and save image.');
   }
 });
 

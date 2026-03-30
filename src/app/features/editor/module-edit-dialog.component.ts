@@ -204,7 +204,7 @@ export class ModuleEditDialogComponent {
     this.uploadError.set(null);
     try {
       const uploaded = await this.cms.uploadImage(file);
-      const fileName = uploaded.src.split('/').pop();
+      const fileName = uploaded.fileName ?? uploaded.src.split('/').pop();
       if (!fileName) {
         throw new Error('Image upload failed: server did not return a valid filename.');
       }

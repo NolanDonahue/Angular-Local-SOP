@@ -9,6 +9,7 @@ import { GlossaryTerm, SopModule } from '../models/sop.models';
 export interface UploadedImageRef {
   src: string;
   alt: string;
+  fileName?: string;
 }
 
 function deepClone<T>(value: T): T {
