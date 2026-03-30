@@ -3,7 +3,6 @@ import {
   Document,
   FileChild,
   HeadingLevel,
-  ImageRun,
   Packer,
   Paragraph,
   TableOfContents,
@@ -18,6 +17,7 @@ export class ExportService {
   readonly repository = inject(SopRepositoryService);
 
   async exportToWord(modules: SopModule[]): Promise<void> {
+    const moduleParagraphs = this.modulesToParagraphs(modules, 1);
     const children: FileChild[] = [
       new Paragraph({ text: 'Standard Operating Procedures', heading: HeadingLevel.TITLE }),
       new Paragraph({ text: '' }),
@@ -28,7 +28,7 @@ export class ExportService {
       new TableOfContents('', {
         hyperlink: true,
       }),
-      ...this.modulesToParagraphs(modules, 1),
+      ...moduleParagraphs,
       new Paragraph({ text: '' }),
       new Paragraph({ text: 'Glossary', heading: HeadingLevel.HEADING_1 }),
       ...this.glossaryToParagraphs(this.repository.glossary()),
@@ -66,54 +66,35 @@ export class ExportService {
     }
   }
 
-  private segmentsToRuns(segments: ContentSegment[]): (TextRun | ImageRun)[] {
-    return segments.map((segment) => {
+  private segmentsToRuns(segments: ContentSegment[]): TextRun[] {
+    const runs: TextRun[] = [];
+    for (const segment of segments) {
       if (segment.type === 'text') {
-        return new TextRun(segment.value);
+        runs.push(new TextRun(segment.value));
+        continue;
       }
 
       if (segment.type === 'image') {
-        if (segment.base64Data) {
-          return new ImageRun({
-            data: this.base64ToUint8Array(segment.base64Data),
-            type: this.imageTypeFromSrc(segment.src),
-            transformation: {
-              width: 500,
-              height: 300,
-            },
-          });
-        }
-
-        return new TextRun(`[Image: ${segment.alt}] (${segment.src})`);
+        const fileName = this.imageFileNameFromSrc(segment.src);
+        runs.push(
+          new TextRun(`[Insert image from assets/images: ${fileName}]`),
+        );
+        continue;
       }
 
       const term = this.repository.getTermById(segment.termId);
       const definition = term ? ` (${term.definition})` : '';
-      return new TextRun({ text: `${segment.display}${definition}`, bold: true });
-    });
+      runs.push(new TextRun({ text: `${segment.display}${definition}`, bold: true }));
+    }
+
+    return runs;
   }
 
-  private base64ToUint8Array(base64Data: string): Uint8Array {
-    const binary = atob(base64Data);
-    const bytes = new Uint8Array(binary.length);
-    for (let i = 0; i < binary.length; i++) {
-      bytes[i] = binary.charCodeAt(i);
-    }
-    return bytes;
-  }
-
-  private imageTypeFromSrc(src: string): 'png' | 'jpg' | 'gif' | 'bmp' {
-    const ext = src.split('.').pop()?.toLowerCase();
-    if (ext === 'jpg' || ext === 'jpeg') {
-      return 'jpg';
-    }
-    if (ext === 'gif') {
-      return 'gif';
-    }
-    if (ext === 'bmp') {
-      return 'bmp';
-    }
-    return 'png';
+  private imageFileNameFromSrc(src: string): string {
+    const trimmed = src.trim();
+    const parts = trimmed.split('/');
+    const fileName = parts[parts.length - 1];
+    return fileName || trimmed;
   }
 
   private glossaryToParagraphs(terms: GlossaryTerm[]): Paragraph[] {

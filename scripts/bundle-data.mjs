@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const projectRoot = resolve(__dirname, '..');
+const imageMode = process.env.BUNDLE_IMAGE_MODE === 'external' ? 'external' : 'inline';
 
 const sopJsonPath = resolve(projectRoot, 'src/assets/content/sop.json');
 const glossaryJsonPath = resolve(projectRoot, 'src/assets/content/glossary.json');
@@ -60,11 +61,13 @@ function parseContent(contentString, glossaryTerms) {
       const imagePath = resolve(projectRoot, `src/assets/images/${imageFilename}`);
 
       let base64Data;
-      try {
-        const imageBuffer = readFileSync(imagePath);
-        base64Data = imageBuffer.toString('base64');
-      } catch {
-        console.warn(`⚠️ Could not read image for base64 encoding: ${imagePath}`);
+      if (imageMode === 'inline') {
+        try {
+          const imageBuffer = readFileSync(imagePath);
+          base64Data = imageBuffer.toString('base64');
+        } catch {
+          console.warn(`⚠️ Could not read image for base64 encoding: ${imagePath}`);
+        }
       }
 
       segments.push({
@@ -101,6 +104,58 @@ function parseContent(contentString, glossaryTerms) {
   return segments;
 }
 
+function toAssetsImagePath(imageSrc) {
+  if (typeof imageSrc !== 'string') {
+    return null;
+  }
+  const cleaned = imageSrc.trim().replace(/^\.?\//, '');
+  if (!cleaned.startsWith('assets/images/')) {
+    return null;
+  }
+  return resolve(projectRoot, 'src', cleaned);
+}
+
+function readImageBase64(imageSrc) {
+  if (imageMode !== 'inline') {
+    return undefined;
+  }
+  const imagePath = toAssetsImagePath(imageSrc);
+  if (!imagePath) {
+    return undefined;
+  }
+  try {
+    const imageBuffer = readFileSync(imagePath);
+    return imageBuffer.toString('base64');
+  } catch {
+    console.warn(`⚠️ Could not read image for base64 encoding: ${imagePath}`);
+    return undefined;
+  }
+}
+
+/** @param {unknown} content */
+function normalizeContentSegments(content) {
+  if (!Array.isArray(content)) {
+    return content;
+  }
+
+  return content.map((segment) => {
+    if (!segment || typeof segment !== 'object') {
+      return segment;
+    }
+
+    const s = /** @type {Record<string, unknown>} */ (segment);
+    if (s.type !== 'image') {
+      return segment;
+    }
+
+    const base64Data =
+      typeof s.base64Data === 'string' && s.base64Data.length > 0
+        ? s.base64Data
+        : readImageBase64(s.src);
+    return base64Data ? { ...s, base64Data } : segment;
+  });
+}
+
 /** @param {unknown} modules @param {{ id: string }[]} glossaryTerms */
 function normalizeSopModules(modules, glossaryTerms) {
   if (!Array.isArray(modules)) {
@@ -115,7 +170,7 @@ function normalizeSopModules(modules, glossaryTerms) {
     const content =
       typeof n.content === 'string'
         ? parseContent(n.content, glossaryTerms)
-        : n.content;
+        : normalizeContentSegments(n.content);
     const children = normalizeSopModules(n.children, glossaryTerms);
 
     return { ...n, content, children };
@@ -151,7 +206,9 @@ async function main() {
     ),
   ]);
 
-  console.log('Bundled SOP, glossary, and workspace config presets into TypeScript constants.');
+  console.log(
+    `Bundled SOP, glossary, and workspace config presets into TypeScript constants (BUNDLE_IMAGE_MODE=${imageMode}).`,
+  );
 }
 
 main().catch((error) => {

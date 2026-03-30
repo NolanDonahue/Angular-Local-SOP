@@ -13,7 +13,7 @@ export class SearchService {
     () =>
       new Fuse(this.flatten(this.repository.modules()), {
         keys: ['title', 'tags', 'content.value', 'content.display'],
-        threshold: 0.35,
+        threshold: 0.2,
       }),
   );
 
@@ -21,7 +21,7 @@ export class SearchService {
     () =>
       new Fuse(this.repository.glossary(), {
         keys: ['term', 'definition'],
-        threshold: 0.35,
+        threshold: 0.2,
       }),
   );
 
