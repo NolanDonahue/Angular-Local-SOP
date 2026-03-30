@@ -16,6 +16,11 @@ export const SOP_DATA: unknown = [
         "type": "term",
         "termId": "appropriation",
         "display": "Appropriation"
+      },
+      {
+        "type": "image",
+        "src": "assets/images/franchising-coach.png",
+        "alt": "franchising coach"
       }
     ],
     "children": [

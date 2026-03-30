@@ -82,6 +82,9 @@ export class SopRepositoryService {
     if (segment.type === 'term') {
       return typeof segment.termId === 'string' && typeof segment.display === 'string';
     }
+    if (segment.type === 'image') {
+      return typeof segment.src === 'string' && typeof segment.alt === 'string';
+    }
     return false;
   }
 

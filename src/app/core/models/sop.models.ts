@@ -1,8 +1,23 @@
 export type SopCategory = 'routine' | 'pitfall' | 'one-off';
 
-export type ContentSegment =
-  | { type: 'text'; value: string }
-  | { type: 'term'; termId: string; display: string };
+export interface TextSegment {
+  type: 'text';
+  value: string;
+}
+
+export interface TermSegment {
+  type: 'term';
+  termId: string;
+  display: string;
+}
+
+export interface ImageSegment {
+  type: 'image';
+  src: string;
+  alt: string;
+}
+
+export type ContentSegment = TextSegment | TermSegment | ImageSegment;
 
 export interface SopModule {
   id: string;

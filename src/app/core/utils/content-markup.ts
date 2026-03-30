@@ -1,10 +1,20 @@
 import { ContentSegment, GlossaryTerm } from '../models/sop.models';
 
+const IMAGE_PREFIX = 'assets/images/';
+
 export function segmentsToMarkup(segments: ContentSegment[]): string {
   return segments
     .map((s) => {
       if (s.type === 'text') {
         return s.value;
+      }
+      if (s.type === 'image') {
+        const path = s.src.startsWith(IMAGE_PREFIX) ? s.src.slice(IMAGE_PREFIX.length) : s.src;
+        const alt = s.alt.trim();
+        if (alt) {
+          return `[[img:${path}|${alt}]]`;
+        }
+        return `[[img:${path}]]`;
       }
       return `[[${s.termId}]]`;
     })
@@ -16,7 +26,7 @@ export function markupToSegments(
   glossaryById: Map<string, GlossaryTerm>,
 ): ContentSegment[] {
   const segments: ContentSegment[] = [];
-  const re = /\[\[([a-z0-9-]+)\]\]/gi;
+  const re = /\[\[img:([^|\]]+)(?:\|([^\]]+))?\]\]|\[\[([^\]]+)\]\]/g;
   let lastIndex = 0;
   let m: RegExpExecArray | null;
   while ((m = re.exec(markup)) !== null) {
@@ -27,15 +37,27 @@ export function markupToSegments(
         pushText(segments, text);
       }
     }
-    const termId = m[1].toLowerCase();
-    const term = glossaryById.get(termId) ?? glossaryById.get(m[1]);
-    if (term) {
-      segments.push({ type: 'term', termId: term.id, display: term.term });
-    } else {
-      pushText(segments, m[0]);
+
+    if (m[1]) {
+      segments.push({
+        type: 'image',
+        src: `${IMAGE_PREFIX}${m[1].trim()}`,
+        alt: m[2] ? m[2].trim() : 'SOP Image',
+      });
+    } else if (m[3]) {
+      const termId = m[3].trim().toLowerCase();
+      const term = glossaryById.get(termId) ?? glossaryById.get(m[3].trim());
+      if (term) {
+        segments.push({ type: 'term', termId: term.id, display: term.term });
+      } else {
+        console.warn(`⚠️ Warning: Glossary term '[[${termId}]]' not found.`);
+        segments.push({ type: 'term', termId, display: m[3].trim() });
+      }
     }
+
     lastIndex = re.lastIndex;
   }
+
   if (lastIndex < markup.length) {
     const text = markup.slice(lastIndex);
     if (text) {

@@ -71,6 +71,10 @@ export class ExportService {
         return new TextRun(segment.value);
       }
 
+      if (segment.type === 'image') {
+        return new TextRun(`[Image: ${segment.alt}] (${segment.src})`);
+      }
+
       const term = this.repository.getTermById(segment.termId);
       const definition = term ? ` (${term.definition})` : '';
       return new TextRun({ text: `${segment.display}${definition}`, bold: true });

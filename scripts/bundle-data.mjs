@@ -34,6 +34,81 @@ async function writeGenerated(path, content) {
   await writeFile(path, content, 'utf8');
 }
 
+/** @param {string} contentString @param {{ id: string }[]} glossaryTerms */
+function parseContent(contentString, glossaryTerms) {
+  if (!contentString) {
+    return [];
+  }
+
+  const segments = [];
+  const re = /\[\[img:([^|\]]+)(?:\|([^\]]+))?\]\]|\[\[([^\]]+)\]\]/g;
+
+  let lastIndex = 0;
+  let match;
+
+  while ((match = re.exec(contentString)) !== null) {
+    if (match.index > lastIndex) {
+      segments.push({
+        type: 'text',
+        value: contentString.slice(lastIndex, match.index),
+      });
+    }
+
+    if (match[1]) {
+      segments.push({
+        type: 'image',
+        src: `assets/images/${match[1].trim()}`,
+        alt: match[2] ? match[2].trim() : 'SOP Image',
+      });
+    } else if (match[3]) {
+      const termId = match[3].trim().toLowerCase();
+      const termExists = glossaryTerms.some((t) => t.id === termId);
+
+      if (!termExists) {
+        console.warn(`⚠️ Warning: Glossary term '[[${termId}]]' not found.`);
+      }
+
+      segments.push({
+        type: 'term',
+        termId,
+        display: match[3].trim(),
+      });
+    }
+
+    lastIndex = re.lastIndex;
+  }
+
+  if (lastIndex < contentString.length) {
+    segments.push({
+      type: 'text',
+      value: contentString.slice(lastIndex),
+    });
+  }
+
+  return segments;
+}
+
+/** @param {unknown} modules @param {{ id: string }[]} glossaryTerms */
+function normalizeSopModules(modules, glossaryTerms) {
+  if (!Array.isArray(modules)) {
+    return modules;
+  }
+
+  return modules.map((node) => {
+    if (!node || typeof node !== 'object') {
+      return node;
+    }
+    const n = /** @type {Record<string, unknown>} */ (node);
+    const content =
+      typeof n.content === 'string'
+        ? parseContent(n.content, glossaryTerms)
+        : n.content;
+    const children = normalizeSopModules(n.children, glossaryTerms);
+
+    return { ...n, content, children };
+  });
+}
+
 async function main() {
   const [sopData, glossaryData, workspaceConfigPresets] = await Promise.all([
     readJson(sopJsonPath),
@@ -41,8 +116,14 @@ async function main() {
     readJson(workspaceConfigPresetsJsonPath),
   ]);
 
+  const glossaryTerms = Array.isArray(glossaryData) ? glossaryData : [];
+  const normalizedSop = normalizeSopModules(sopData, glossaryTerms);
+
   await Promise.all([
-    writeGenerated(sopOutputPath, toTsModule('SOP_DATA', sopData, 'src/assets/content/sop.json')),
+    writeGenerated(
+      sopOutputPath,
+      toTsModule('SOP_DATA', normalizedSop, 'src/assets/content/sop.json'),
+    ),
     writeGenerated(
       glossaryOutputPath,
       toTsModule('GLOSSARY_DATA', glossaryData, 'src/assets/content/glossary.json'),

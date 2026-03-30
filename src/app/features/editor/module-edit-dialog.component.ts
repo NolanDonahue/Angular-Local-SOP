@@ -6,7 +6,6 @@ import {
   signal,
   viewChild,
   ElementRef,
-  afterNextRender,
 } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -77,6 +76,27 @@ export interface ModuleEditDialogResult {
           <button mat-stroked-button type="button" (click)="insertSelectedTerm()">Insert</button>
         </div>
 
+        <div class="insert-row">
+          <button
+            mat-stroked-button
+            type="button"
+            (click)="openImagePicker()"
+            [disabled]="uploadInProgress()"
+          >
+            {{ uploadInProgress() ? 'Uploading image...' : 'Upload image' }}
+          </button>
+          <input
+            #imageInput
+            type="file"
+            accept="image/*"
+            class="hidden-file-input"
+            (change)="onImageSelected($event)"
+          />
+          @if (uploadError()) {
+            <span class="error-text">{{ uploadError() }}</span>
+          }
+        </div>
+
         <mat-form-field appearance="outline" class="full-width">
           <mat-label>Content</mat-label>
           <textarea #contentArea matInput formControlName="content" rows="12"></textarea>
@@ -117,6 +137,16 @@ export interface ModuleEditDialogResult {
       flex: 1;
       min-width: 200px;
     }
+
+    .hidden-file-input {
+      display: none;
+    }
+
+    .error-text {
+      color: #ffb4ab;
+      font-size: 0.85rem;
+      align-self: center;
+    }
   `,
 })
 export class ModuleEditDialogComponent {
@@ -126,8 +156,11 @@ export class ModuleEditDialogComponent {
   readonly data = inject<ModuleEditDialogData>(MAT_DIALOG_DATA);
 
   readonly contentArea = viewChild<ElementRef<HTMLTextAreaElement>>('contentArea');
+  readonly imageInput = viewChild<ElementRef<HTMLInputElement>>('imageInput');
 
   readonly selectedTermId = signal('');
+  readonly uploadInProgress = signal(false);
+  readonly uploadError = signal<string | null>(null);
 
   readonly glossarySorted = computed(() =>
     [...this.cms.glossary()].sort((a, b) => a.term.localeCompare(b.term)),
@@ -153,7 +186,35 @@ export class ModuleEditDialogComponent {
     if (!termId) {
       return;
     }
-    const tag = `[[${termId}]]`;
+    this.insertAtCursor(`[[${termId}]]`);
+  }
+
+  openImagePicker(): void {
+    this.uploadError.set(null);
+    this.imageInput()?.nativeElement.click();
+  }
+
+  async onImageSelected(event: Event): Promise<void> {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) {
+      return;
+    }
+    this.uploadInProgress.set(true);
+    this.uploadError.set(null);
+    try {
+      const uploaded = await this.cms.uploadImage(file);
+      const fileName = uploaded.src.replace(/^assets\/images\//, '');
+      this.insertAtCursor(`[[img:${fileName}|${uploaded.alt}]]`);
+    } catch (e) {
+      this.uploadError.set(e instanceof Error ? e.message : 'Image upload failed.');
+    } finally {
+      this.uploadInProgress.set(false);
+      input.value = '';
+    }
+  }
+
+  private insertAtCursor(tag: string): void {
     const ctrl = this.form.controls.content;
     const v = ctrl.getRawValue() ?? '';
     const ta = this.contentArea()?.nativeElement;
@@ -161,12 +222,10 @@ export class ModuleEditDialogComponent {
       const start = ta.selectionStart;
       const end = ta.selectionEnd ?? start;
       ctrl.setValue(v.slice(0, start) + tag + v.slice(end));
-      afterNextRender({
-        read: () => {
-          ta.focus();
-          const pos = start + tag.length;
-          ta.setSelectionRange(pos, pos);
-        },
+      const pos = start + tag.length;
+      queueMicrotask(() => {
+        ta.focus();
+        ta.setSelectionRange(pos, pos);
       });
     } else {
       ctrl.setValue(v + tag);

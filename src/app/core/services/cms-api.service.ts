@@ -6,6 +6,11 @@ import { GLOSSARY_DATA } from '../data/glossary.data';
 import { SOP_DATA } from '../data/sop.data';
 import { GlossaryTerm, SopModule } from '../models/sop.models';
 
+export interface UploadedImageRef {
+  src: string;
+  alt: string;
+}
+
 function deepClone<T>(value: T): T {
   return JSON.parse(JSON.stringify(value)) as T;
 }
@@ -78,6 +83,18 @@ export class CmsApiService {
     }
     await firstValueFrom(
       this.http.post<{ success: boolean }>(`${base}/glossary`, this._glossary()),
+    );
+  }
+
+  async uploadImage(file: File): Promise<UploadedImageRef> {
+    const base = environment.cmsApiBaseUrl?.replace(/\/$/, '');
+    if (!base) {
+      throw new Error('CMS API URL is not configured.');
+    }
+    const form = new FormData();
+    form.append('image', file);
+    return firstValueFrom(
+      this.http.post<UploadedImageRef>(`${base}/assets/images`, form),
     );
   }
 }

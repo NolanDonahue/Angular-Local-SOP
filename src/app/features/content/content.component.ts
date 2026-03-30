@@ -9,12 +9,20 @@ import { SopRepositoryService } from '../../core/services/sop-repository.service
   imports: [MatTooltipModule],
   template: `
     @for (segment of segments; track $index) {
-      @if (segment.type === 'text') {
-        <span>{{ segment.value }}</span>
-      } @else {
-        <span class="glossary-term" [matTooltip]="definition(segment.termId)">
-          {{ segment.display }}
-        </span>
+      @switch (segment.type) {
+        @case ('text') {
+          <span>{{ segment.value }}</span>
+        }
+        @case ('term') {
+          <span class="glossary-term" [matTooltip]="definition(segment.termId)">
+            {{ segment.display }}
+          </span>
+        }
+        @case ('image') {
+          <span class="image-wrapper">
+            <img [src]="segment.src" [alt]="segment.alt" class="inline-sop-image" />
+          </span>
+        }
       }
     }
   `,
@@ -24,6 +32,15 @@ import { SopRepositoryService } from '../../core/services/sop-repository.service
       cursor: help;
       font-weight: 600;
       color: #8ecbff;
+    }
+
+    .inline-sop-image {
+      max-width: 100%;
+      height: auto;
+      border-radius: 4px;
+      display: block;
+      margin: 1rem 0;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     }
   `,
 })
