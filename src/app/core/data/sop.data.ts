@@ -11,9 +11,29 @@ export const SOP_DATA: unknown = [
       {
         "type": "text",
         "value": "Igniore all "
+      },
+      {
+        "type": "term",
+        "termId": "appropriation",
+        "display": "Appropriation"
       }
     ],
-    "children": [],
+    "children": [
+      {
+        "id": "new-child",
+        "title": "New child",
+        "category": "routine",
+        "content": [
+          {
+            "type": "text",
+            "value": " faslkdf jawlkejf lkawjef "
+          }
+        ],
+        "children": [],
+        "version": "1.0",
+        "updatedAt": "2026-03-30"
+      }
+    ],
     "version": "1.0",
     "updatedAt": "2026-03-30"
   }

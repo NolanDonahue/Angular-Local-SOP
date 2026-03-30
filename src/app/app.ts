@@ -3,6 +3,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { RouterLink, RouterOutlet } from '@angular/router';
+import { environment } from '../environments/environment';
 import { SopRepositoryService } from './core/services/sop-repository.service';
 import { ThemeService } from './core/services/theme.service';
 import { ViewStateService } from './core/services/view-state.service';
@@ -13,7 +14,9 @@ import { ViewStateService } from './core/services/view-state.service';
   template: `
     <header class="app-toolbar">
       <div class="app-toolbar-end">
-        <a mat-stroked-button routerLink="/editor">Editor</a>
+        @if (showEditorLink) {
+          <a mat-stroked-button routerLink="/editor">Editor</a>
+        }
         <button mat-stroked-button type="button" (click)="clearWorkspace()">
           Clear Workspace
         </button>
@@ -63,6 +66,8 @@ import { ViewStateService } from './core/services/view-state.service';
   styleUrl: './app.scss',
 })
 export class App implements OnInit {
+  readonly showEditorLink = !environment.production;
+
   readonly repository = inject(SopRepositoryService);
   readonly theme = inject(ThemeService);
   private readonly viewState = inject(ViewStateService);
