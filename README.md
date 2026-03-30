@@ -82,11 +82,13 @@ npm start
 ## Commands
 
 - `npm start` - run local dev server (`ng serve`)
-- `npm run bundle-data` - convert JSON content into generated TypeScript constants
+- `npm run bundle-data` - convert JSON content into generated TypeScript constants (external image mode by default)
+- `npm run bundle-data:inline` - generate SOP data with inlined image base64 payloads for offline/single-file use
 - `npm run build` - standard Angular production build
 - `npm run build:local` - production build with relative base paths (`--base-href ./`)
 - `npm run build:portable` - bundle data, then run portable local build
 - `npm run build:file-static` - build and rewrite output into a single file-static JS entry
+- `npm run check:external-bundle` - verify generated SOP data has no `base64Data` and print file size stats
 - `npm run preview:dist` - serve built app from `dist/sop-viewer/browser` on port `8080`
 - `npm test` - run unit tests
 - `npm run lint` - run ESLint checks

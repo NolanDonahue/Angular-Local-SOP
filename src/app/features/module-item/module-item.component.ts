@@ -23,7 +23,7 @@ import { SopContentComponent } from '../content/content.component';
         </mat-panel-description>
       </mat-expansion-panel-header>
 
-      <p><app-sop-content [segments]="module.content" /></p>
+      <div class="module-content"><app-sop-content [segments]="module.content" /></div>
 
       @if (module.tags?.length) {
         <div class="tags">
@@ -60,6 +60,10 @@ import { SopContentComponent } from '../content/content.component';
       gap: 0.4rem;
       margin-bottom: 0.75rem;
       flex-wrap: wrap;
+    }
+
+    .module-content {
+      margin: 0.5rem 0 1rem;
     }
   `,
 })

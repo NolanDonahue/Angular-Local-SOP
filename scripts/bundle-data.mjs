@@ -60,22 +60,22 @@ function parseContent(contentString, glossaryTerms) {
       const imageFilename = match[1].trim();
       const imagePath = resolve(projectRoot, `src/assets/images/${imageFilename}`);
 
-      let base64Data;
+      const imageSegment = {
+        type: 'image',
+        src: `assets/images/${imageFilename}`,
+        alt: match[2] ? match[2].trim() : 'SOP Image',
+      };
+
       if (imageMode === 'inline') {
         try {
           const imageBuffer = readFileSync(imagePath);
-          base64Data = imageBuffer.toString('base64');
+          imageSegment.base64Data = imageBuffer.toString('base64');
         } catch {
           console.warn(`⚠️ Could not read image for base64 encoding: ${imagePath}`);
         }
       }
 
-      segments.push({
-        type: 'image',
-        src: `assets/images/${imageFilename}`,
-        alt: match[2] ? match[2].trim() : 'SOP Image',
-        base64Data,
-      });
+      segments.push(imageSegment);
     } else if (match[3]) {
       const termId = match[3].trim().toLowerCase();
       const termExists = glossaryTerms.some((t) => t.id === termId);
@@ -148,11 +148,18 @@ function normalizeContentSegments(content) {
       return segment;
     }
 
+    if (imageMode === 'external') {
+      // External mode never ships inlined base64 payloads.
+      const imageWithoutBase64 = { ...s };
+      delete imageWithoutBase64.base64Data;
+      return imageWithoutBase64;
+    }
+
     const base64Data =
       typeof s.base64Data === 'string' && s.base64Data.length > 0
         ? s.base64Data
         : readImageBase64(s.src);
-    return base64Data ? { ...s, base64Data } : segment;
+    return base64Data ? { ...s, base64Data } : s;
   });
 }
 
