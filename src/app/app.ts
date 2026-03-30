@@ -2,17 +2,18 @@ import { Component, inject, OnInit } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
-import { RouterOutlet } from '@angular/router';
+import { RouterLink, RouterOutlet } from '@angular/router';
 import { SopRepositoryService } from './core/services/sop-repository.service';
 import { ThemeService } from './core/services/theme.service';
 import { ViewStateService } from './core/services/view-state.service';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, MatButtonModule, MatIconModule, MatSlideToggleModule],
+  imports: [RouterOutlet, RouterLink, MatButtonModule, MatIconModule, MatSlideToggleModule],
   template: `
     <header class="app-toolbar">
       <div class="app-toolbar-end">
+        <a mat-stroked-button routerLink="/editor">Editor</a>
         <button mat-stroked-button type="button" (click)="clearWorkspace()">
           Clear Workspace
         </button>

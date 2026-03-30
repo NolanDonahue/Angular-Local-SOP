@@ -1,18 +1,17 @@
-import { Injectable, signal } from '@angular/core';
-import { GLOSSARY_DATA } from '../data/glossary.data';
-import { SOP_DATA } from '../data/sop.data';
+import { Injectable, computed, inject, signal } from '@angular/core';
 import { GlossaryTerm, SopCategory, SopModule } from '../models/sop.models';
+import { CmsApiService } from './cms-api.service';
 
 @Injectable({ providedIn: 'root' })
 export class SopRepositoryService {
-  private readonly _modules = signal<SopModule[]>([]);
-  private readonly _glossary = signal<GlossaryTerm[]>([]);
+  private readonly cms = inject(CmsApiService);
+
   private readonly _loading = signal(false);
   private readonly _error = signal<string | null>(null);
   private hasLoaded = false;
 
-  readonly modules = this._modules.asReadonly();
-  readonly glossary = this._glossary.asReadonly();
+  readonly modules = computed(() => this.cms.sopTree());
+  readonly glossary = computed(() => this.cms.glossary());
   readonly loading = this._loading.asReadonly();
   readonly error = this._error.asReadonly();
 
@@ -25,8 +24,10 @@ export class SopRepositoryService {
     this._error.set(null);
 
     try {
-      const modules = SOP_DATA;
-      const glossary = GLOSSARY_DATA;
+      await this.cms.initialize();
+
+      const modules = this.cms.sopTree();
+      const glossary = this.cms.glossary();
 
       if (!Array.isArray(modules) || !modules.every((module) => this.isSopModule(module))) {
         throw new Error('Invalid SOP module content format.');
@@ -36,8 +37,6 @@ export class SopRepositoryService {
         throw new Error('Invalid glossary content format.');
       }
 
-      this._modules.set(modules);
-      this._glossary.set(glossary);
       this.hasLoaded = true;
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unable to load SOP content files.';
@@ -48,11 +47,11 @@ export class SopRepositoryService {
   }
 
   getTermById(id: string): GlossaryTerm | undefined {
-    return this._glossary().find((term) => term.id === id);
+    return this.cms.glossary().find((term) => term.id === id);
   }
 
   findModuleById(id: string): SopModule | undefined {
-    return this.findNestedModule(id, this._modules());
+    return this.findNestedModule(id, this.cms.sopTree());
   }
 
   private findNestedModule(id: string, nodes: SopModule[]): SopModule | undefined {
