@@ -35,6 +35,11 @@ import { SidebarTreeComponent } from '../sidebar-tree/sidebar-tree.component';
           <mat-form-field appearance="outline" class="search">
             <mat-label>Search sidebar titles and glossary</mat-label>
             <input matInput [(ngModel)]="query" />
+            @if (query) {
+              <button matSuffix mat-icon-button type="button" aria-label="Clear search" (click)="query = ''">
+                <mat-icon>close</mat-icon>
+              </button>
+            }
           </mat-form-field>
           <button mat-stroked-button (click)="clearWorkspace()">Clear Workspace</button>
           <button

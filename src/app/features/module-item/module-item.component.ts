@@ -11,6 +11,7 @@ import { ContentComponent } from '../content/content.component';
   imports: [MatExpansionModule, MatChipsModule, ContentComponent],
   template: `
     <mat-expansion-panel
+      [class.nested-panel]="nested"
       [expanded]="viewState.isExpanded(module.id)"
       (opened)="viewState.setExpanded(module.id, true)"
       (closed)="viewState.setExpanded(module.id, false)"
@@ -35,7 +36,7 @@ import { ContentComponent } from '../content/content.component';
       @if (module.children.length) {
         <div class="children">
           @for (child of module.children; track child.id) {
-            <app-module-item [module]="child" />
+            <app-module-item [module]="child" [nested]="true" />
           }
         </div>
       }
@@ -48,6 +49,12 @@ import { ContentComponent } from '../content/content.component';
       margin-top: 0.5rem;
     }
 
+    mat-expansion-panel.nested-panel {
+      margin-left: 1rem;
+      border-left: 3px solid #3f51b5;
+      box-shadow: none;
+    }
+
     .tags {
       display: flex;
       gap: 0.4rem;
@@ -58,6 +65,7 @@ import { ContentComponent } from '../content/content.component';
 })
 export class ModuleItemComponent {
   @Input({ required: true }) module!: SopModule;
+  @Input() nested = false;
 
   readonly viewState = inject(ViewStateService);
 }
