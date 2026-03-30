@@ -3,8 +3,7 @@ import { Routes } from '@angular/router';
 export const routes: Routes = [
   {
     path: '',
-    loadComponent: () =>
-      import('./features/toc/toc.component').then((m) => m.TocComponent),
+    loadComponent: () => import('./features/toc/toc.component').then((m) => m.TocComponent),
   },
   {
     path: 'glossary',

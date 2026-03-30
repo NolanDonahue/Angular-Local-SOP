@@ -1,4 +1,4 @@
-import { computed, Injectable, signal } from '@angular/core';
+import { computed, inject, Injectable, signal } from '@angular/core';
 import { WORKSPACE_CONFIG_PRESETS_DATA } from '../data/workspace-config-presets.data';
 import { SopRepositoryService } from './sop-repository.service';
 import { WorkspaceConfig, WorkspaceConfigPreset } from '../models/workspace-config.models';
@@ -7,8 +7,9 @@ const STORAGE_KEY = 'workspace.savedConfigs';
 
 @Injectable({ providedIn: 'root' })
 export class WorkspaceConfigService {
-  private readonly _presetConfigs = signal<WorkspaceConfig[]>([]);
-  private readonly _savedConfigs = signal<WorkspaceConfig[]>([]);
+  private readonly repository = inject(SopRepositoryService);
+  private readonly _presetConfigs = signal<WorkspaceConfig[]>(this.loadPresetConfigs());
+  private readonly _savedConfigs = signal<WorkspaceConfig[]>(this.loadSavedConfigs());
 
   readonly presetConfigs = this._presetConfigs.asReadonly();
   readonly savedConfigs = this._savedConfigs.asReadonly();
@@ -19,11 +20,6 @@ export class WorkspaceConfigService {
     );
     return [...presets, ...saved];
   });
-
-  constructor(private readonly repository: SopRepositoryService) {
-    this._presetConfigs.set(this.loadPresetConfigs());
-    this._savedConfigs.set(this.loadSavedConfigs());
-  }
 
   getConfigById(id: string): WorkspaceConfig | undefined {
     return this.configs().find((config) => config.id === id);

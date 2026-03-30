@@ -30,7 +30,7 @@ import { SopRepositoryService } from '../../core/services/sop-repository.service
   `,
   styles: `
     .page {
-      max-width: 1000px;
+      max-width: 80%;
       margin: 0 auto;
       padding: 1rem;
       display: grid;

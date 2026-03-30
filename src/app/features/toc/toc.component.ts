@@ -6,8 +6,8 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
+import { MatDialog } from '@angular/material/dialog';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { MatSelectModule } from '@angular/material/select';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { map } from 'rxjs';
 import { ExportService } from '../../core/services/export.service';
@@ -17,6 +17,11 @@ import { ViewStateService } from '../../core/services/view-state.service';
 import { WorkspaceConfigService } from '../../core/services/workspace-config.service';
 import { ModuleItemComponent } from '../module-item/module-item.component';
 import { SidebarTreeComponent } from '../sidebar-tree/sidebar-tree.component';
+import {
+  WorkspacePresetsDialogComponent,
+  WorkspacePresetsDialogData,
+  WorkspacePresetsDialogResult,
+} from './workspace-presets-dialog.component';
 
 @Component({
   selector: 'app-toc',
@@ -27,7 +32,6 @@ import { SidebarTreeComponent } from '../sidebar-tree/sidebar-tree.component';
     MatButtonModule,
     MatFormFieldModule,
     MatInputModule,
-    MatSelectModule,
     MatProgressBarModule,
     MatIconModule,
     RouterLink,
@@ -38,7 +42,7 @@ import { SidebarTreeComponent } from '../sidebar-tree/sidebar-tree.component';
     <main class="page">
       <header class="toolbar">
         <h1>Standard Operating Procedures</h1>
-        <div class="actions">
+        <div class="toolbar-actions">
           <mat-form-field appearance="outline" class="search">
             <mat-label>Search sidebar titles and glossary</mat-label>
             <input matInput [(ngModel)]="query" />
@@ -54,33 +58,10 @@ import { SidebarTreeComponent } from '../sidebar-tree/sidebar-tree.component';
               </button>
             }
           </mat-form-field>
-          <mat-form-field appearance="outline" class="config-select">
-            <mat-label>Workspace config</mat-label>
-            <mat-select [(ngModel)]="activeConfigId">
-              <mat-option value="">Select config</mat-option>
-              @for (config of workspaceConfigService.configs(); track config.id) {
-                <mat-option [value]="config.id">{{ config.label }} ({{ config.source }})</mat-option>
-              }
-            </mat-select>
-          </mat-form-field>
-          <mat-form-field appearance="outline" class="config-name">
-            <mat-label>Save selection as</mat-label>
-            <input matInput [(ngModel)]="newConfigLabel" />
-          </mat-form-field>
-          <button mat-stroked-button type="button" (click)="saveCurrentSelection()">Save Config</button>
-          <button mat-stroked-button type="button" [disabled]="!activeConfigId" (click)="loadConfig(activeConfigId)">
-            Load Config
-          </button>
-          <button
-            mat-stroked-button
-            type="button"
-            [disabled]="!canDeleteActiveConfig()"
-            (click)="deleteActiveConfig()"
-          >
-            Delete Saved Config
-          </button>
-          <button mat-stroked-button (click)="clearWorkspace()">Clear Workspace</button>
           <a mat-stroked-button routerLink="/glossary">Glossary</a>
+          <button mat-stroked-button type="button" (click)="openPresets()">
+            Presets
+          </button>
           <button
             mat-flat-button
             color="primary"
@@ -140,16 +121,22 @@ import { SidebarTreeComponent } from '../sidebar-tree/sidebar-tree.component';
   `,
   styles: `
     .page {
-      max-width: 1100px;
+      max-width: 85%;
+      width: 100%;
       margin: 0 auto;
       padding: 1rem;
+      box-sizing: border-box;
     }
 
     .toolbar {
       margin-bottom: 1rem;
     }
 
-    .actions {
+    .toolbar h1 {
+      margin: 0 0 0.75rem;
+    }
+
+    .toolbar-actions {
       display: flex;
       gap: 0.75rem;
       align-items: center;
@@ -158,12 +145,7 @@ import { SidebarTreeComponent } from '../sidebar-tree/sidebar-tree.component';
 
     .search {
       min-width: 280px;
-      flex: 1;
-    }
-
-    .config-select,
-    .config-name {
-      min-width: 220px;
+      flex: 1 1 280px;
     }
 
     .layout {
@@ -237,7 +219,6 @@ import { SidebarTreeComponent } from '../sidebar-tree/sidebar-tree.component';
 })
 export class TocComponent {
   query = '';
-  newConfigLabel = '';
   activeConfigId = '';
   configMessage = '';
   private lastLoadedQueryConfigId: string | null = null;
@@ -251,7 +232,8 @@ export class TocComponent {
   readonly repository = inject(SopRepositoryService);
   readonly viewState = inject(ViewStateService);
   readonly exportService = inject(ExportService);
-  readonly workspaceConfigService = inject(WorkspaceConfigService);
+  private readonly workspaceConfigService = inject(WorkspaceConfigService);
+  private readonly dialog = inject(MatDialog);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly queryConfigId = toSignal(
@@ -273,24 +255,28 @@ export class TocComponent {
     });
   }
 
-  clearWorkspace(): void {
-    this.viewState.clearSelections();
+  openPresets(): void {
+    const data: WorkspacePresetsDialogData = { activeConfigId: this.activeConfigId };
+    this.dialog
+      .open<
+        WorkspacePresetsDialogComponent,
+        WorkspacePresetsDialogData,
+        WorkspacePresetsDialogResult
+      >(WorkspacePresetsDialogComponent, {
+        width: 'min(580px, 92vw)',
+        data,
+      })
+      .afterClosed()
+      .subscribe((result) => {
+        if (!result) {
+          return;
+        }
+        this.activeConfigId = result.activeConfigId;
+        this.configMessage = result.configMessage;
+      });
   }
 
-  saveCurrentSelection(): void {
-    const label = this.newConfigLabel.trim();
-    const savedConfig = this.workspaceConfigService.saveConfig(label, this.viewState.selectedModuleIds());
-    if (!savedConfig) {
-      this.configMessage = 'Enter a name and select at least one module before saving.';
-      return;
-    }
-    this.activeConfigId = savedConfig.id;
-    this.newConfigLabel = '';
-    this.configMessage = `Saved "${savedConfig.label}".`;
-    void this.setConfigQueryParam(savedConfig.id);
-  }
-
-  loadConfig(configId: string, syncUrl = true): void {
+  private loadConfig(configId: string, syncUrl = true): void {
     const moduleIds = this.workspaceConfigService.applyConfigById(configId);
     if (!moduleIds) {
       this.configMessage = `Could not find config "${configId}".`;
@@ -299,30 +285,12 @@ export class TocComponent {
     this.activeConfigId = configId;
     this.viewState.applySelection(moduleIds);
     const loadedConfig = this.workspaceConfigService.getConfigById(configId);
-    this.configMessage = loadedConfig ? `Loaded "${loadedConfig.label}".` : 'Loaded selected config.';
+    this.configMessage = loadedConfig
+      ? `Loaded "${loadedConfig.label}".`
+      : 'Loaded selected config.';
     if (syncUrl) {
       void this.setConfigQueryParam(configId);
     }
-  }
-
-  canDeleteActiveConfig(): boolean {
-    const config = this.workspaceConfigService.getConfigById(this.activeConfigId);
-    return config?.source === 'saved';
-  }
-
-  deleteActiveConfig(): void {
-    const config = this.workspaceConfigService.getConfigById(this.activeConfigId);
-    if (!config || config.source !== 'saved') {
-      return;
-    }
-    this.workspaceConfigService.deleteSavedConfig(config.id);
-    this.configMessage = `Deleted "${config.label}".`;
-    this.activeConfigId = '';
-    void this.router.navigate([], {
-      relativeTo: this.route,
-      queryParams: { config: null },
-      queryParamsHandling: 'merge',
-    });
   }
 
   private setConfigQueryParam(configId: string): Promise<boolean> {
