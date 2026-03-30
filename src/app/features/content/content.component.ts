@@ -23,7 +23,7 @@ import { SopRepositoryService } from '../../core/services/sop-repository.service
       border-bottom: 1px dashed currentColor;
       cursor: help;
       font-weight: 600;
-      color: #1a237e;
+      color: #8ecbff;
     }
   `,
 })

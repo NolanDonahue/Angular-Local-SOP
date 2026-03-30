@@ -36,7 +36,13 @@ import { SidebarTreeComponent } from '../sidebar-tree/sidebar-tree.component';
             <mat-label>Search sidebar titles and glossary</mat-label>
             <input matInput [(ngModel)]="query" />
             @if (query) {
-              <button matSuffix mat-icon-button type="button" aria-label="Clear search" (click)="query = ''">
+              <button
+                matSuffix
+                mat-icon-button
+                type="button"
+                aria-label="Clear search"
+                (click)="query = ''"
+              >
                 <mat-icon>close</mat-icon>
               </button>
             }
@@ -83,7 +89,7 @@ import { SidebarTreeComponent } from '../sidebar-tree/sidebar-tree.component';
                         aria-label="Remove from workspace"
                         (click)="viewState.removeSelection(module.id)"
                       >
-                        <mat-icon>close</mat-icon>
+                        <mat-icon svgIcon="close" />
                       </button>
                     </div>
                     <app-module-item [module]="module" />
@@ -128,10 +134,11 @@ import { SidebarTreeComponent } from '../sidebar-tree/sidebar-tree.component';
 
     .sidebar,
     .workspace {
-      background: #fff;
+      background: var(--surface-1);
+      border: 1px solid var(--border-subtle);
       border-radius: 12px;
       padding: 0.9rem;
-      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
     }
 
     .sidebar h2,
@@ -146,7 +153,8 @@ import { SidebarTreeComponent } from '../sidebar-tree/sidebar-tree.component';
     }
 
     .workspace-item {
-      border: 1px solid rgba(0, 0, 0, 0.08);
+      border: 1px solid var(--border-subtle);
+      background: var(--surface-2);
       border-radius: 10px;
       padding: 0.7rem;
     }
@@ -165,7 +173,7 @@ import { SidebarTreeComponent } from '../sidebar-tree/sidebar-tree.component';
 
     .empty {
       margin: 0;
-      opacity: 0.75;
+      color: var(--text-muted);
     }
 
     @media (max-width: 900px) {
@@ -175,7 +183,7 @@ import { SidebarTreeComponent } from '../sidebar-tree/sidebar-tree.component';
     }
 
     .error {
-      color: #b3261e;
+      color: #ffb4ab;
       font-weight: 600;
     }
   `,

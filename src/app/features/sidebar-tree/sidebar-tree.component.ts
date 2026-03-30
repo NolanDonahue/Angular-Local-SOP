@@ -44,9 +44,7 @@ import { ViewStateService } from '../../core/services/view-state.service';
                   (click)="toggleNode(node.id)"
                   [attr.aria-label]="'Toggle ' + node.title"
                 >
-                  <mat-icon>{{
-                    viewState.isTreeExpanded(node.id) ? 'keyboard_arrow_down' : 'keyboard_arrow_right'
-                  }}</mat-icon>
+                  <mat-icon [svgIcon]="viewState.isTreeExpanded(node.id) ? 'down-arrow' : 'right-arrow'" />
                 </button>
               } @else {
                 <span class="toggle-spacer"></span>
@@ -113,11 +111,11 @@ import { ViewStateService } from '../../core/services/view-state.service';
     }
 
     .node-button:hover {
-      background: rgba(25, 118, 210, 0.08);
+      background: var(--azure-hover);
     }
 
     .node-button.selected {
-      background: rgba(25, 118, 210, 0.16);
+      background: var(--azure-selected);
       font-weight: 600;
     }
 
@@ -127,8 +125,8 @@ import { ViewStateService } from '../../core/services/view-state.service';
     }
 
     .result.module {
-      border: 0;
-      background: rgba(0, 0, 0, 0.03);
+      border: 1px solid var(--border-subtle);
+      background: var(--surface-2);
       border-radius: 6px;
       text-align: left;
       padding: 0.5rem;
@@ -136,7 +134,7 @@ import { ViewStateService } from '../../core/services/view-state.service';
     }
 
     .result.module:hover {
-      background: rgba(25, 118, 210, 0.12);
+      background: var(--azure-hover);
     }
 
     .result.term {
@@ -146,7 +144,7 @@ import { ViewStateService } from '../../core/services/view-state.service';
 
     .empty {
       margin: 0;
-      opacity: 0.7;
+      color: var(--text-muted);
     }
   `,
 })

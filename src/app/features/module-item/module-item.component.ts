@@ -45,13 +45,13 @@ import { ContentComponent } from '../content/content.component';
   styles: `
     .children {
       padding-left: 0.75rem;
-      border-left: 2px solid rgba(0, 0, 0, 0.08);
+      border-left: 2px solid var(--border-subtle);
       margin-top: 0.5rem;
     }
 
     mat-expansion-panel.nested-panel {
       margin-left: 1rem;
-      border-left: 3px solid #3f51b5;
+      border-left: 3px solid rgba(66, 165, 245, 0.7);
       box-shadow: none;
     }
 

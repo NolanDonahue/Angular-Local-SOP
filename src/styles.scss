@@ -1,12 +1,27 @@
 @use '@angular/material' as mat;
 
 html {
+  color-scheme: dark;
+  @include mat.theme(
+    (
+      color: (
+        theme-type: dark,
+        primary: mat.$azure-palette,
+      ),
+      typography: Roboto,
+      density: 0,
+    )
+  );
+}
+
+[data-theme='light'] {
   color-scheme: light;
   @include mat.theme(
     (
-      color: mat.$azure-palette,
-      typography: Roboto,
-      density: 0,
+      color: (
+        theme-type: light,
+        primary: mat.$azure-palette,
+      ),
     )
   );
 }
@@ -14,20 +29,58 @@ html {
 body {
   margin: 0;
   font-family: Roboto, 'Helvetica Neue', sans-serif;
-  background: #f8f9fc;
+  background: var(--app-bg);
+  color: var(--text-primary);
+}
+
+:root {
+  --app-bg: #0f1723;
+  --text-primary: #dbe7ff;
+  --surface-1: #111b2b;
+  --surface-2: #162338;
+  --border-subtle: rgba(164, 197, 255, 0.2);
+  --text-muted: rgba(219, 231, 255, 0.72);
+  --azure-hover: rgba(66, 165, 245, 0.18);
+  --azure-selected: rgba(66, 165, 245, 0.28);
 }
 
 .category-routine {
+  --mdc-chip-label-text-color: #9fe7ba;
+  background: #123126;
+}
+
+.category-pitfall {
+  --mdc-chip-label-text-color: #ffb4ab;
+  background: #3b1715;
+}
+
+.category-one-off {
+  --mdc-chip-label-text-color: #f0dca2;
+  background: #392d10;
+}
+
+[data-theme='light'] {
+  --app-bg: #f5f8ff;
+  --text-primary: #1b2638;
+  --surface-1: #ffffff;
+  --surface-2: #eef4ff;
+  --border-subtle: rgba(25, 118, 210, 0.2);
+  --text-muted: rgba(27, 38, 56, 0.72);
+  --azure-hover: rgba(25, 118, 210, 0.1);
+  --azure-selected: rgba(25, 118, 210, 0.18);
+}
+
+[data-theme='light'] .category-routine {
   --mdc-chip-label-text-color: #1a6b1a;
   background: #e8f5e9;
 }
 
-.category-pitfall {
+[data-theme='light'] .category-pitfall {
   --mdc-chip-label-text-color: #b3261e;
   background: #fdecea;
 }
 
-.category-one-off {
+[data-theme='light'] .category-one-off {
   --mdc-chip-label-text-color: #6b4c00;
   background: #fff8e1;
 }
