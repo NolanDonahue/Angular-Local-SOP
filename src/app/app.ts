@@ -27,6 +27,7 @@ import { ThemeService } from './core/services/theme.service';
       display: flex;
       justify-content: flex-end;
       padding: 0.75rem 1rem 0;
+      margin-right: 1rem;
     }
 
     .theme-toggle {
@@ -42,7 +43,6 @@ import { ThemeService } from './core/services/theme.service';
     .theme-toggle mat-icon {
       width: 18px;
       height: 18px;
-      font-size: 18px;
       color: var(--text-muted);
     }
   `,
