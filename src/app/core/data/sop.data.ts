@@ -5,12 +5,12 @@
 export const SOP_DATA: unknown = [
   {
     "id": "new-module",
-    "title": "LEarning to Play",
-    "category": "pitfall",
+    "title": "Template Root Name",
+    "category": "routine",
     "content": [
       {
         "type": "text",
-        "value": "Igniore all "
+        "value": "Insert glossary terms as follows "
       },
       {
         "type": "term",
@@ -19,7 +19,7 @@ export const SOP_DATA: unknown = [
       },
       {
         "type": "text",
-        "value": "\n"
+        "value": "\n\nImages can be inserted inline and uploaded in the editor\n"
       },
       {
         "type": "image",
@@ -34,12 +34,17 @@ export const SOP_DATA: unknown = [
     "children": [
       {
         "id": "new-child",
-        "title": "New child",
-        "category": "routine",
+        "title": "Template Child",
+        "category": "one-off",
         "content": [
           {
             "type": "text",
-            "value": " faslkdf jawlkejf lkawjef "
+            "value": "Adding a child will nest the content into the root without "
+          },
+          {
+            "type": "term",
+            "termId": "encumbrance",
+            "display": "Encumbrance"
           }
         ],
         "children": [],

@@ -87,7 +87,27 @@ import {
           </aside>
 
           <section class="workspace">
-            <h2>Selected SOP Content</h2>
+            <div class="workspace-heading">
+              <h2>Selected SOP Content</h2>
+              <div class="workspace-heading-actions">
+                <button
+                  mat-stroked-button
+                  type="button"
+                  [disabled]="!selectedModules().length"
+                  (click)="expandSelectedContent()"
+                >
+                  Expand
+                </button>
+                <button
+                  mat-stroked-button
+                  type="button"
+                  [disabled]="!selectedModules().length"
+                  (click)="collapseSelectedContent()"
+                >
+                  Collapse
+                </button>
+              </div>
+            </div>
 
             @if (!selectedModules().length) {
               <p class="empty">Select titles from the sidebar to add content here.</p>
@@ -166,8 +186,23 @@ import {
 
     .sidebar h2,
     .workspace h2 {
-      margin: 0 0 0.75rem;
+      margin: 0;
       font-size: 1rem;
+    }
+
+    .workspace-heading {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+      margin-bottom: 0.75rem;
+    }
+
+    .workspace-heading-actions {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
     }
 
     .workspace-list {
@@ -276,6 +311,15 @@ export class TocComponent {
       });
   }
 
+  expandSelectedContent(): void {
+    const ids = this.selectedModules().flatMap((module) => this.collectModuleIds(module));
+    this.viewState.expandAll(ids);
+  }
+
+  collapseSelectedContent(): void {
+    this.viewState.collapseAll();
+  }
+
   private loadConfig(configId: string, syncUrl = true): void {
     const moduleIds = this.workspaceConfigService.applyConfigById(configId);
     if (!moduleIds) {
@@ -299,5 +343,9 @@ export class TocComponent {
       queryParams: { config: configId },
       queryParamsHandling: 'merge',
     });
+  }
+
+  private collectModuleIds(module: SopModule): string[] {
+    return [module.id, ...module.children.flatMap((child) => this.collectModuleIds(child))];
   }
 }

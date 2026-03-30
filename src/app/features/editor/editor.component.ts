@@ -21,10 +21,7 @@ import {
   uniqueModuleId,
   updateModuleInTree,
 } from '../../core/utils/sop-tree-utils';
-import {
-  ModuleEditDialogComponent,
-  ModuleEditDialogResult,
-} from './module-edit-dialog.component';
+import { ModuleEditDialogComponent, ModuleEditDialogResult } from './module-edit-dialog.component';
 
 @Component({
   selector: 'app-editor',
@@ -53,6 +50,62 @@ import {
       }
 
       <mat-tab-group>
+        <mat-tab label="SOPs">
+          <div class="tab-pad">
+            <div class="actions wrap">
+              <button
+                mat-flat-button
+                color="primary"
+                type="button"
+                (click)="saveSops()"
+                [disabled]="saving() || !cms.canPersist()"
+              >
+                Save All SOPs
+              </button>
+              <button mat-stroked-button type="button" (click)="addRootModule()">
+                Add root module
+              </button>
+              @if (!cms.canPersist()) {
+                <span class="hint">Saving requires dev server and API (npm start).</span>
+              }
+            </div>
+
+            <mat-tree [dataSource]="dataSource" [treeControl]="treeControl" class="sop-tree">
+              <mat-nested-tree-node *matTreeNodeDef="let node" matTreeNodeToggle>
+                <li class="tree-node">
+                  <div class="tree-line">
+                    @if (node.children.length) {
+                      <button
+                        mat-icon-button
+                        matTreeNodeToggle
+                        type="button"
+                        [attr.aria-label]="'toggle ' + node.title"
+                        class="tree-toggle"
+                      >
+                        <span class="tree-chevron" aria-hidden="true">{{
+                          treeControl.isExpanded(node) ? '▾' : '▸'
+                        }}</span>
+                      </button>
+                    } @else {
+                      <span class="tree-toggle-spacer" aria-hidden="true"></span>
+                    }
+                    <span class="node-title">{{ node.title }}</span>
+                    <button mat-stroked-button type="button" (click)="editModule(node)">
+                      Edit
+                    </button>
+                    <button mat-stroked-button type="button" (click)="addChildModule(node)">
+                      Add child
+                    </button>
+                  </div>
+                  <ul class="nested" [class.nested-collapsed]="!treeControl.isExpanded(node)">
+                    <ng-container matTreeNodeOutlet></ng-container>
+                  </ul>
+                </li>
+              </mat-nested-tree-node>
+            </mat-tree>
+          </div>
+        </mat-tab>
+
         <mat-tab label="Glossary">
           <div class="tab-pad">
             <div class="actions">
@@ -86,7 +139,9 @@ import {
               <ng-container matColumnDef="actions">
                 <th mat-header-cell *matHeaderCellDef></th>
                 <td mat-cell *matCellDef="let row">
-                  <button mat-button type="button" (click)="removeGlossaryTerm(row.id)">Remove</button>
+                  <button mat-button type="button" (click)="removeGlossaryTerm(row.id)">
+                    Remove
+                  </button>
                 </td>
               </ng-container>
               <tr mat-header-row *matHeaderRowDef="glossaryColumns"></tr>
@@ -105,58 +160,6 @@ import {
               </mat-form-field>
               <button mat-stroked-button type="button" (click)="addGlossaryTerm()">Add</button>
             </div>
-          </div>
-        </mat-tab>
-
-        <mat-tab label="SOPs">
-          <div class="tab-pad">
-            <div class="actions wrap">
-              <button
-                mat-flat-button
-                color="primary"
-                type="button"
-                (click)="saveSops()"
-                [disabled]="saving() || !cms.canPersist()"
-              >
-                Save All SOPs
-              </button>
-              <button mat-stroked-button type="button" (click)="addRootModule()">Add root module</button>
-              @if (!cms.canPersist()) {
-                <span class="hint">Saving requires dev server and API (npm start).</span>
-              }
-            </div>
-
-            <mat-tree [dataSource]="dataSource" [treeControl]="treeControl" class="sop-tree">
-              <mat-nested-tree-node *matTreeNodeDef="let node" matTreeNodeToggle>
-                <li class="tree-node">
-                  <div class="tree-line">
-                    @if (node.children.length) {
-                      <button
-                        mat-icon-button
-                        matTreeNodeToggle
-                        type="button"
-                        [attr.aria-label]="'toggle ' + node.title"
-                        class="tree-toggle"
-                      >
-                        <span class="tree-chevron" aria-hidden="true">{{
-                          treeControl.isExpanded(node) ? '▾' : '▸'
-                        }}</span>
-                      </button>
-                    } @else {
-                      <span class="tree-toggle-spacer" aria-hidden="true"></span>
-                    }
-                    <span class="node-title">{{ node.title }}</span>
-                    <button mat-stroked-button type="button" (click)="editModule(node)">Edit</button>
-                    <button mat-stroked-button type="button" (click)="addChildModule(node)">
-                      Add child
-                    </button>
-                  </div>
-                  <ul class="nested" [class.nested-collapsed]="!treeControl.isExpanded(node)">
-                    <ng-container matTreeNodeOutlet></ng-container>
-                  </ul>
-                </li>
-              </mat-nested-tree-node>
-            </mat-tree>
           </div>
         </mat-tab>
       </mat-tab-group>
