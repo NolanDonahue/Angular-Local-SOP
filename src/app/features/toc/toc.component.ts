@@ -37,8 +37,13 @@ import { SidebarTreeComponent } from '../sidebar-tree/sidebar-tree.component';
             <input matInput [(ngModel)]="query" />
           </mat-form-field>
           <button mat-stroked-button (click)="clearWorkspace()">Clear Workspace</button>
-          <button mat-flat-button color="primary" (click)="exportService.exportToWord()">
-            Export All to Word
+          <button
+            mat-flat-button
+            color="primary"
+            [disabled]="!selectedModules().length"
+            (click)="exportService.exportToWord(selectedModules())"
+          >
+            Export Selected to Word
           </button>
         </div>
       </header>

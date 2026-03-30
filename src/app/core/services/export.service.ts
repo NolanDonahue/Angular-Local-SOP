@@ -16,7 +16,7 @@ import { SopRepositoryService } from './sop-repository.service';
 export class ExportService {
   readonly repository = inject(SopRepositoryService);
 
-  async exportToWord(): Promise<void> {
+  async exportToWord(modules: SopModule[]): Promise<void> {
     const children: FileChild[] = [
       new Paragraph({ text: 'Standard Operating Procedures', heading: HeadingLevel.TITLE }),
       new Paragraph({ text: '' }),
@@ -27,7 +27,7 @@ export class ExportService {
       new TableOfContents('', {
         hyperlink: true,
       }),
-      ...this.modulesToParagraphs(this.repository.modules(), 1),
+      ...this.modulesToParagraphs(modules, 1),
       new Paragraph({ text: '' }),
       new Paragraph({ text: 'Glossary', heading: HeadingLevel.HEADING_1 }),
       ...this.glossaryToParagraphs(this.repository.glossary()),

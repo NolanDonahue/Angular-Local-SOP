@@ -16,3 +16,18 @@ body {
   font-family: Roboto, 'Helvetica Neue', sans-serif;
   background: #f8f9fc;
 }
+
+.category-routine {
+  --mdc-chip-label-text-color: #1a6b1a;
+  background: #e8f5e9;
+}
+
+.category-pitfall {
+  --mdc-chip-label-text-color: #b3261e;
+  background: #fdecea;
+}
+
+.category-one-off {
+  --mdc-chip-label-text-color: #6b4c00;
+  background: #fff8e1;
+}

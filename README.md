@@ -62,17 +62,23 @@ All SOP content is maintained as JSON files (no TypeScript edits required):
 ## Authoring workflow
 
 1. Edit `sop.json` and/or `glossary.json`.
-2. Run the app locally and verify content renders:
+2. Regenerate bundled TypeScript data:
+
+```bash
+npm run bundle-data
+```
+
+1. Run the app locally and verify content renders:
 
 ```bash
 ng serve
 ```
 
-3. Confirm:
+1. Confirm:
    - sidebar tree shows the new title
    - selecting title adds it to workspace
    - glossary references show expected tooltip text
-4. Test Word export from the UI.
+2. Test Word export from the UI.
 
 ## Validation checklist
 
@@ -87,12 +93,18 @@ ng serve
 Use this production build command for portable output:
 
 ```bash
-ng build --base-href ./
+npm run build:local
 ```
 
 Build output is in `dist/sop-viewer/`. Share that folder as a static site package.
 
-The app is designed for static hosting and can also be opened via `file://` in many environments, but some locked-down browser policies may restrict local file behavior.
+Because data is bundled into TypeScript at build time, the generated app can be opened from `file://` and hosted as static files without runtime JSON fetches.
+
+For a one-command portable build:
+
+```bash
+npm run build:portable
+```
 
 ## Development server
 

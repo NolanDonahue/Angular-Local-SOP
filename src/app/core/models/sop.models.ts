@@ -21,8 +21,3 @@ export interface GlossaryTerm {
   term: string;
   definition: string;
 }
-
-export interface SopContentPack {
-  modules: SopModule[];
-  glossary: GlossaryTerm[];
-}

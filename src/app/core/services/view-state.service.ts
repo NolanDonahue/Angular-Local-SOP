@@ -3,10 +3,12 @@ import { Injectable, signal } from '@angular/core';
 @Injectable({ providedIn: 'root' })
 export class ViewStateService {
   private readonly _expanded = signal(new Map<string, boolean>());
+  private readonly _treeExpanded = signal(new Map<string, boolean>());
   private readonly _selectedModuleId = signal<string | null>(null);
   private readonly _selectedModuleIds = signal<string[]>([]);
 
   readonly expanded = this._expanded.asReadonly();
+  readonly treeExpanded = this._treeExpanded.asReadonly();
   readonly selectedModuleId = this._selectedModuleId.asReadonly();
   readonly selectedModuleIds = this._selectedModuleIds.asReadonly();
 
@@ -16,6 +18,18 @@ export class ViewStateService {
 
   setExpanded(id: string, expanded: boolean): void {
     this._expanded.update((map) => {
+      const next = new Map(map);
+      next.set(id, expanded);
+      return next;
+    });
+  }
+
+  isTreeExpanded(id: string): boolean {
+    return this._treeExpanded().get(id) ?? false;
+  }
+
+  setTreeExpanded(id: string, expanded: boolean): void {
+    this._treeExpanded.update((map) => {
       const next = new Map(map);
       next.set(id, expanded);
       return next;

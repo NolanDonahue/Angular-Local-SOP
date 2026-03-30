@@ -1,6 +1,6 @@
-import { HttpClient } from '@angular/common/http';
-import { inject, Injectable, signal } from '@angular/core';
-import { firstValueFrom } from 'rxjs';
+import { Injectable, signal } from '@angular/core';
+import { GLOSSARY_DATA } from '../data/glossary.data';
+import { SOP_DATA } from '../data/sop.data';
 import { GlossaryTerm, SopCategory, SopModule } from '../models/sop.models';
 
 @Injectable({ providedIn: 'root' })
@@ -16,8 +16,6 @@ export class SopRepositoryService {
   readonly loading = this._loading.asReadonly();
   readonly error = this._error.asReadonly();
 
-  readonly http = inject(HttpClient);
-
   async loadContent(): Promise<void> {
     if (this.hasLoaded || this._loading()) {
       return;
@@ -27,10 +25,8 @@ export class SopRepositoryService {
     this._error.set(null);
 
     try {
-      const [modules, glossary] = await Promise.all([
-        firstValueFrom(this.http.get<unknown>('assets/content/sop.json')),
-        firstValueFrom(this.http.get<unknown>('assets/content/glossary.json')),
-      ]);
+      const modules = SOP_DATA;
+      const glossary = GLOSSARY_DATA;
 
       if (!Array.isArray(modules) || !modules.every((module) => this.isSopModule(module))) {
         throw new Error('Invalid SOP module content format.');

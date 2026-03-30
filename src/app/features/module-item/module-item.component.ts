@@ -18,7 +18,7 @@ import { ContentComponent } from '../content/content.component';
       <mat-expansion-panel-header>
         <mat-panel-title>{{ module.title }}</mat-panel-title>
         <mat-panel-description>
-          <mat-chip>{{ module.category }}</mat-chip>
+          <mat-chip [class]="'category-' + module.category">{{ module.category }}</mat-chip>
         </mat-panel-description>
       </mat-expansion-panel-header>
 

@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import { Component, inject, Input } from '@angular/core';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ContentSegment } from '../../core/models/sop.models';
@@ -7,7 +6,7 @@ import { SopRepositoryService } from '../../core/services/sop-repository.service
 @Component({
   selector: 'app-content',
   standalone: true,
-  imports: [CommonModule, MatTooltipModule],
+  imports: [MatTooltipModule],
   template: `
     @for (segment of segments; track $index) {
       @if (segment.type === 'text') {

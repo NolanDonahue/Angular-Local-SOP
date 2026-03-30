@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+import { NgTemplateOutlet } from '@angular/common';
 import { Component, inject, Input } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -9,7 +9,7 @@ import { ViewStateService } from '../../core/services/view-state.service';
 @Component({
   selector: 'app-sidebar-tree',
   standalone: true,
-  imports: [CommonModule, MatButtonModule, MatIconModule],
+  imports: [NgTemplateOutlet, MatButtonModule, MatIconModule],
   template: `
     @if (query.trim()) {
       <section class="search-results">
@@ -45,7 +45,7 @@ import { ViewStateService } from '../../core/services/view-state.service';
                   [attr.aria-label]="'Toggle ' + node.title"
                 >
                   <mat-icon>{{
-                    viewState.isExpanded(node.id) ? 'keyboard_arrow_down' : 'keyboard_arrow_right'
+                    viewState.isTreeExpanded(node.id) ? 'keyboard_arrow_down' : 'keyboard_arrow_right'
                   }}</mat-icon>
                 </button>
               } @else {
@@ -62,7 +62,7 @@ import { ViewStateService } from '../../core/services/view-state.service';
               </button>
             </div>
 
-            @if (node.children.length && viewState.isExpanded(node.id)) {
+            @if (node.children.length && viewState.isTreeExpanded(node.id)) {
               <ng-container
                 *ngTemplateOutlet="
                   treeTemplate;
@@ -158,7 +158,7 @@ export class SidebarTreeComponent {
   readonly search = inject(SearchService);
 
   toggleNode(id: string): void {
-    this.viewState.setExpanded(id, !this.viewState.isExpanded(id));
+    this.viewState.setTreeExpanded(id, !this.viewState.isTreeExpanded(id));
   }
 
   addToWorkspace(id: string): void {

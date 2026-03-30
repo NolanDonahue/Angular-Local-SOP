@@ -5,6 +5,9 @@
     "ng": "ng",
     "start": "ng serve",
     "build": "ng build",
+    "build:local": "ng build --base-href ./",
+    "build:portable": "npm run bundle-data && npm run build:local",
+    "bundle-data": "node scripts/bundle-data.mjs",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "lint": "ng lint"

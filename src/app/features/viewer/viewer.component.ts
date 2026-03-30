@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, effect, inject } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { map } from 'rxjs';
 import { toSignal } from '@angular/core/rxjs-interop';
@@ -11,12 +12,14 @@ import { ModuleItemComponent } from '../module-item/module-item.component';
 @Component({
   selector: 'app-viewer',
   standalone: true,
-  imports: [CommonModule, RouterLink, MatButtonModule, ModuleItemComponent],
+  imports: [CommonModule, RouterLink, MatButtonModule, MatProgressBarModule, ModuleItemComponent],
   template: `
     <main class="page">
       <a mat-stroked-button routerLink="/">Back to all SOPs</a>
 
-      @if (module()) {
+      @if (repository.loading()) {
+        <mat-progress-bar mode="indeterminate" />
+      } @else if (module()) {
         <h1>{{ module()!.title }}</h1>
         <app-module-item [module]="module()!" />
       } @else {
@@ -36,7 +39,7 @@ import { ModuleItemComponent } from '../module-item/module-item.component';
 })
 export class ViewerComponent {
   private readonly route = inject(ActivatedRoute);
-  private readonly repository = inject(SopRepositoryService);
+  readonly repository = inject(SopRepositoryService);
   readonly viewState = inject(ViewStateService);
 
   private readonly moduleId = toSignal(
@@ -46,11 +49,17 @@ export class ViewerComponent {
 
   readonly module = computed(() => {
     const id = this.moduleId();
-    if (!id) {
-      return undefined;
-    }
-    this.viewState.setExpanded(id, true);
-    this.viewState.setSelectedModuleId(id);
-    return this.repository.findModuleById(id);
+    return id ? this.repository.findModuleById(id) : undefined;
   });
+
+  constructor() {
+    effect(() => {
+      const id = this.moduleId();
+      if (!id) {
+        return;
+      }
+      this.viewState.setExpanded(id, true);
+      this.viewState.setSelectedModuleId(id);
+    });
+  }
 }
