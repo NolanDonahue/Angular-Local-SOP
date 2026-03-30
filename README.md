@@ -1,39 +1,45 @@
 # SopViewer
 
-This project is a portable SOP website template for organizing and reviewing county/municipal operating procedures. Users select SOP titles from a sidebar tree, add them to a workspace, and export to Word when needed.
+SopViewer is a portable Angular SOP workspace for organizing procedures, searching content, and exporting selected modules to Word.
 
-## Content file locations
+## What changed in this version
 
-All SOP content is maintained as JSON files (no TypeScript edits required):
+- SOP and glossary content are bundled into TypeScript at build time (`npm run bundle-data`), so runtime JSON fetches are not required.
+- Portable builds support `file://` usage with routing fallbacks in `src/main.ts`.
+- A file-static build option is available to emit a single non-module app bundle for environments with stricter static hosting constraints.
+- Theme preference (dark/light) is persisted in browser storage.
+
+## Content source files
+
+All editable business content stays in JSON:
 
 - `src/assets/content/sop.json`
 - `src/assets/content/glossary.json`
 
-## How to add SOP content
+Generated data files (do not edit manually):
+
+- `src/app/core/data/sop.data.ts`
+- `src/app/core/data/glossary.data.ts`
+
+## Editing SOP content
 
 1. Open `src/assets/content/sop.json`.
-2. Add a new module object to the root array (or inside a module's `children`).
-3. Use a unique `id` and set `category` to one of:
+2. Add or update modules in the root list or nested `children`.
+3. Use a unique `id` and one of these categories:
    - `routine`
    - `pitfall`
    - `one-off`
-4. Add `content` segments:
-   - plain text: `{ "type": "text", "value": "..." }`
-   - glossary term reference: `{ "type": "term", "termId": "encumbrance", "display": "encumbrance" }`
-5. Add nested items under `children` for sub-procedures.
-6. Optionally add metadata fields: `tags`, `version`, `updatedAt`, `owner`.
+4. Build `content` with segment objects:
+   - Text segment: `{ "type": "text", "value": "..." }`
+   - Glossary reference: `{ "type": "term", "termId": "appropriation", "display": "appropriation" }`
 
-### SOP JSON example
+Example:
 
 ```json
 {
   "id": "monthly-reconciliation",
   "title": "Monthly Reconciliation",
   "category": "routine",
-  "version": "1.0",
-  "updatedAt": "2026-03-30",
-  "owner": "County Finance",
-  "tags": ["month-end", "reconciliation"],
   "content": [
     { "type": "text", "value": "Reconcile all posted expenses against approved " },
     { "type": "term", "termId": "appropriation", "display": "appropriations" },
@@ -43,13 +49,13 @@ All SOP content is maintained as JSON files (no TypeScript edits required):
 }
 ```
 
-## How to add glossary terms
+## Editing glossary terms
 
 1. Open `src/assets/content/glossary.json`.
-2. Add a term with a unique `id`.
-3. Use that same `id` in SOP content segments via `termId`.
+2. Add a unique `id`, `term`, and `definition`.
+3. Reference that term in SOP content via `termId`.
 
-### Glossary JSON example
+Example:
 
 ```json
 {
@@ -62,102 +68,62 @@ All SOP content is maintained as JSON files (no TypeScript edits required):
 ## Authoring workflow
 
 1. Edit `sop.json` and/or `glossary.json`.
-2. Regenerate bundled TypeScript data:
+2. Regenerate bundled data:
 
 ```bash
 npm run bundle-data
 ```
 
-1. Run the app locally and verify content renders:
+1. Start local development:
 
 ```bash
-ng serve
+npm start
 ```
 
-1. Confirm:
-   - sidebar tree shows the new title
-   - selecting title adds it to workspace
-   - glossary references show expected tooltip text
-2. Test Word export from the UI.
+1. Verify:
+   - tree includes your new or updated content
+   - workspace interactions still work
+   - glossary references render correctly
+   - Word export produces expected output
 
-## Validation checklist
+## Commands
 
-- JSON format is valid (no trailing commas, valid quotes).
-- Every module `id` is unique.
-- Every glossary `id` is unique.
-- Every `termId` in SOP content exists in `glossary.json`.
-- App loads without "Invalid SOP module content format" or glossary format errors.
+- `npm start` - run local dev server (`ng serve`)
+- `npm run bundle-data` - convert JSON content into generated TypeScript constants
+- `npm run build` - standard Angular production build
+- `npm run build:local` - production build with relative base paths (`--base-href ./`)
+- `npm run build:portable` - bundle data, then run portable local build
+- `npm run build:file-static` - build and rewrite output into a single file-static JS entry
+- `npm run preview:dist` - serve built app from `dist/sop-viewer/browser` on port `8080`
+- `npm test` - run unit tests
+- `npm run lint` - run ESLint checks
 
-## Build and distribution notes
+## Build and distribution
 
-Use this production build command for portable output:
-
-```bash
-npm run build:local
-```
-
-Build output is in `dist/sop-viewer/`. Share that folder as a static site package.
-
-Because data is bundled into TypeScript at build time, the generated app can be opened from `file://` and hosted as static files without runtime JSON fetches.
-
-For a one-command portable build:
+For most offline/static distribution use:
 
 ```bash
 npm run build:portable
 ```
 
-## Development server
+Artifacts are written under `dist/sop-viewer/`.
 
-To start a local development server, run:
-
-```bash
-ng serve
-```
-
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
-
-## Code scaffolding
-
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+If your host cannot reliably run module-based entry scripts, use:
 
 ```bash
-ng generate component component-name
+npm run build:file-static
 ```
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+Then validate from a local static server:
 
 ```bash
-ng generate --help
+npm run preview:dist
 ```
 
-## Building
+## Validation checklist
 
-To build the project run:
-
-```bash
-ng build
-```
-
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
-
-## Running unit tests
-
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
-
-```bash
-ng test
-```
-
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
-
-```bash
-ng e2e
-```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+- JSON is valid.
+- SOP module `id` values are unique.
+- Glossary `id` values are unique.
+- Every SOP `termId` exists in `glossary.json`.
+- App loads without SOP/glossary format errors.
