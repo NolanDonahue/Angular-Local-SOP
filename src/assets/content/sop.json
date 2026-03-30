@@ -1,0 +1,65 @@
+[
+  {
+    "id": "annual-budget-cycle",
+    "title": "Annual Budget Cycle",
+    "category": "routine",
+    "version": "1.0",
+    "updatedAt": "2026-03-30",
+    "owner": "County Finance",
+    "tags": ["budget", "annual", "planning"],
+    "content": [
+      { "type": "text", "value": "Begin each cycle by reconciling prior-year " },
+      { "type": "term", "termId": "appropriation", "display": "appropriations" },
+      { "type": "text", "value": " and unresolved purchase orders." }
+    ],
+    "children": [
+      {
+        "id": "department-requests",
+        "title": "Collect Department Requests",
+        "category": "routine",
+        "version": "1.0",
+        "updatedAt": "2026-03-30",
+        "owner": "Budget Office",
+        "tags": ["requests"],
+        "content": [
+          {
+            "type": "text",
+            "value": "Collect departmental requests by January 31 and flag requests without statutory authority."
+          }
+        ],
+        "children": []
+      }
+    ]
+  },
+  {
+    "id": "encumbrance-closeout-pitfalls",
+    "title": "Common Encumbrance Closeout Pitfalls",
+    "category": "pitfall",
+    "version": "1.0",
+    "updatedAt": "2026-03-30",
+    "owner": "Accounts Payable",
+    "tags": ["audit", "closeout"],
+    "content": [
+      { "type": "text", "value": "The most common audit finding is failure to release an " },
+      { "type": "term", "termId": "encumbrance", "display": "encumbrance" },
+      { "type": "text", "value": " after contract completion." }
+    ],
+    "children": []
+  },
+  {
+    "id": "midyear-revenue-collapse",
+    "title": "One-Off Scenario: Midyear Revenue Collapse",
+    "category": "one-off",
+    "version": "1.0",
+    "updatedAt": "2026-03-30",
+    "owner": "Finance Director",
+    "tags": ["contingency", "forecast"],
+    "content": [
+      {
+        "type": "text",
+        "value": "If monthly receipts drop below forecast by 8% for two consecutive months, initiate emergency reforecast within five business days."
+      }
+    ],
+    "children": []
+  }
+]

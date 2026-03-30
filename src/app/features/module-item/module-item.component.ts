@@ -1,0 +1,63 @@
+import { Component, inject, Input } from '@angular/core';
+import { MatChipsModule } from '@angular/material/chips';
+import { MatExpansionModule } from '@angular/material/expansion';
+import { SopModule } from '../../core/models/sop.models';
+import { ViewStateService } from '../../core/services/view-state.service';
+import { ContentComponent } from '../content/content.component';
+
+@Component({
+  selector: 'app-module-item',
+  standalone: true,
+  imports: [MatExpansionModule, MatChipsModule, ContentComponent],
+  template: `
+    <mat-expansion-panel
+      [expanded]="viewState.isExpanded(module.id)"
+      (opened)="viewState.setExpanded(module.id, true)"
+      (closed)="viewState.setExpanded(module.id, false)"
+    >
+      <mat-expansion-panel-header>
+        <mat-panel-title>{{ module.title }}</mat-panel-title>
+        <mat-panel-description>
+          <mat-chip>{{ module.category }}</mat-chip>
+        </mat-panel-description>
+      </mat-expansion-panel-header>
+
+      <p><app-content [segments]="module.content" /></p>
+
+      @if (module.tags?.length) {
+        <div class="tags">
+          @for (tag of module.tags; track tag) {
+            <mat-chip>{{ tag }}</mat-chip>
+          }
+        </div>
+      }
+
+      @if (module.children.length) {
+        <div class="children">
+          @for (child of module.children; track child.id) {
+            <app-module-item [module]="child" />
+          }
+        </div>
+      }
+    </mat-expansion-panel>
+  `,
+  styles: `
+    .children {
+      padding-left: 0.75rem;
+      border-left: 2px solid rgba(0, 0, 0, 0.08);
+      margin-top: 0.5rem;
+    }
+
+    .tags {
+      display: flex;
+      gap: 0.4rem;
+      margin-bottom: 0.75rem;
+      flex-wrap: wrap;
+    }
+  `,
+})
+export class ModuleItemComponent {
+  @Input({ required: true }) module!: SopModule;
+
+  readonly viewState = inject(ViewStateService);
+}
