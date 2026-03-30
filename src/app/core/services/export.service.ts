@@ -3,6 +3,7 @@ import {
   Document,
   FileChild,
   HeadingLevel,
+  ImageRun,
   Packer,
   Paragraph,
   TableOfContents,
@@ -65,13 +66,24 @@ export class ExportService {
     }
   }
 
-  private segmentsToRuns(segments: ContentSegment[]): TextRun[] {
+  private segmentsToRuns(segments: ContentSegment[]): (TextRun | ImageRun)[] {
     return segments.map((segment) => {
       if (segment.type === 'text') {
         return new TextRun(segment.value);
       }
 
       if (segment.type === 'image') {
+        if (segment.base64Data) {
+          return new ImageRun({
+            data: this.base64ToUint8Array(segment.base64Data),
+            type: this.imageTypeFromSrc(segment.src),
+            transformation: {
+              width: 500,
+              height: 300,
+            },
+          });
+        }
+
         return new TextRun(`[Image: ${segment.alt}] (${segment.src})`);
       }
 
@@ -79,6 +91,29 @@ export class ExportService {
       const definition = term ? ` (${term.definition})` : '';
       return new TextRun({ text: `${segment.display}${definition}`, bold: true });
     });
+  }
+
+  private base64ToUint8Array(base64Data: string): Uint8Array {
+    const binary = atob(base64Data);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) {
+      bytes[i] = binary.charCodeAt(i);
+    }
+    return bytes;
+  }
+
+  private imageTypeFromSrc(src: string): 'png' | 'jpg' | 'gif' | 'bmp' {
+    const ext = src.split('.').pop()?.toLowerCase();
+    if (ext === 'jpg' || ext === 'jpeg') {
+      return 'jpg';
+    }
+    if (ext === 'gif') {
+      return 'gif';
+    }
+    if (ext === 'bmp') {
+      return 'bmp';
+    }
+    return 'png';
   }
 
   private glossaryToParagraphs(terms: GlossaryTerm[]): Paragraph[] {

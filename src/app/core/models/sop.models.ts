@@ -15,6 +15,7 @@ export interface ImageSegment {
   type: 'image';
   src: string;
   alt: string;
+  base64Data?: string;
 }
 
 export type ContentSegment = TextSegment | TermSegment | ImageSegment;

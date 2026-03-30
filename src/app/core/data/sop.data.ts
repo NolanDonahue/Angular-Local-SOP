@@ -16,6 +16,19 @@ export const SOP_DATA: unknown = [
         "type": "term",
         "termId": "appropriation",
         "display": "Appropriation"
+      },
+      {
+        "type": "text",
+        "value": "\n"
+      },
+      {
+        "type": "image",
+        "src": "assets/images/Rick-Astley.jpg",
+        "alt": "Rick Astley"
+      },
+      {
+        "type": "text",
+        "value": "\nNever gonna give you up"
       }
     ],
     "children": [

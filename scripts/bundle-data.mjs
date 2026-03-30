@@ -1,4 +1,5 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -55,10 +56,22 @@ function parseContent(contentString, glossaryTerms) {
     }
 
     if (match[1]) {
+      const imageFilename = match[1].trim();
+      const imagePath = resolve(projectRoot, `src/assets/images/${imageFilename}`);
+
+      let base64Data;
+      try {
+        const imageBuffer = readFileSync(imagePath);
+        base64Data = imageBuffer.toString('base64');
+      } catch {
+        console.warn(`⚠️ Could not read image for base64 encoding: ${imagePath}`);
+      }
+
       segments.push({
         type: 'image',
-        src: `assets/images/${match[1].trim()}`,
+        src: `assets/images/${imageFilename}`,
         alt: match[2] ? match[2].trim() : 'SOP Image',
+        base64Data,
       });
     } else if (match[3]) {
       const termId = match[3].trim().toLowerCase();
