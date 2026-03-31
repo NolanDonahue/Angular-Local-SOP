@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, effect, inject } from '@angular/core';
+import { Component, computed, effect, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -12,6 +12,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { map } from 'rxjs';
 import { ExportService } from '../../core/services/export.service';
 import { SopModule } from '../../core/models/sop.models';
+import { SearchService } from '../../core/services/search.service';
 import { SopRepositoryService } from '../../core/services/sop-repository.service';
 import { ViewStateService } from '../../core/services/view-state.service';
 import { WorkspaceConfigService } from '../../core/services/workspace-config.service';
@@ -45,14 +46,14 @@ import {
         <div class="toolbar-actions">
           <mat-form-field appearance="outline" class="search">
             <mat-label>Search sidebar titles and glossary</mat-label>
-            <input matInput [(ngModel)]="query" />
-            @if (query) {
+            <input matInput [ngModel]="searchQuery()" (ngModelChange)="searchQuery.set($event)" />
+            @if (searchQuery()) {
               <button
                 matSuffix
                 mat-icon-button
                 type="button"
                 aria-label="Clear search"
-                (click)="query = ''"
+                (click)="searchQuery.set('')"
               >
                 <mat-icon>close</mat-icon>
               </button>
@@ -83,7 +84,11 @@ import {
         <section class="layout">
           <aside class="sidebar">
             <h2>Content Titles</h2>
-            <app-sidebar-tree [modules]="repository.modules()" [query]="query" />
+            <app-sidebar-tree
+              [modules]="repository.modules()"
+              [searchResults]="sidebarSearchResults()"
+              [searchQueryDisplay]="searchQuery()"
+            />
           </aside>
 
           <section class="workspace">
@@ -241,7 +246,7 @@ import {
     }
 
     .error {
-      color: #ffb4ab;
+      color: var(--error-text);
       font-weight: 600;
     }
 
@@ -253,7 +258,12 @@ import {
   `,
 })
 export class TocComponent {
-  query = '';
+  readonly searchQuery = signal('');
+  readonly sidebarSearchResults = computed(() => {
+    const q = this.searchQuery().trim();
+    return q ? this.search.search(q) : null;
+  });
+
   activeConfigId = '';
   configMessage = '';
   private lastLoadedQueryConfigId: string | null = null;
@@ -265,6 +275,7 @@ export class TocComponent {
   );
 
   readonly repository = inject(SopRepositoryService);
+  private readonly search = inject(SearchService);
   readonly viewState = inject(ViewStateService);
   readonly exportService = inject(ExportService);
   private readonly workspaceConfigService = inject(WorkspaceConfigService);

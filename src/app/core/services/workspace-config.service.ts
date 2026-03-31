@@ -1,4 +1,4 @@
-import { computed, inject, Injectable, signal } from '@angular/core';
+import { computed, effect, inject, Injectable, signal } from '@angular/core';
 import { WORKSPACE_CONFIG_PRESETS_DATA } from '../data/workspace-config-presets.data';
 import { SopRepositoryService } from './sop-repository.service';
 import { WorkspaceConfig, WorkspaceConfigPreset } from '../models/workspace-config.models';
@@ -20,6 +20,32 @@ export class WorkspaceConfigService {
     );
     return [...presets, ...saved];
   });
+
+  constructor() {
+    effect(() => {
+      if (!this.repository.initialLoadSucceeded()) {
+        return;
+      }
+      this.repository.modules();
+      const configs = this._savedConfigs();
+      let changed = false;
+      const next = configs.map((config) => {
+        const nextIds = this.validateModuleIds(config.moduleIds);
+        const same =
+          nextIds.length === config.moduleIds.length &&
+          nextIds.every((id, index) => id === config.moduleIds[index]);
+        if (!same) {
+          changed = true;
+          return { ...config, moduleIds: nextIds };
+        }
+        return config;
+      });
+      if (changed) {
+        this._savedConfigs.set(next);
+        this.persistSavedConfigs();
+      }
+    });
+  }
 
   getConfigById(id: string): WorkspaceConfig | undefined {
     return this.configs().find((config) => config.id === id);
@@ -60,9 +86,12 @@ export class WorkspaceConfigService {
 
   private validateModuleIds(moduleIds: string[]): string[] {
     const uniqueIds = [...new Set(moduleIds)];
+    if (!this.repository.initialLoadSucceeded()) {
+      return uniqueIds;
+    }
     const modules = this.repository.modules();
     if (!modules.length) {
-      return uniqueIds;
+      return [];
     }
     return uniqueIds.filter((id) => this.repository.findModuleById(id) !== undefined);
   }

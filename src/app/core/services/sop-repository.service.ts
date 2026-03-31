@@ -8,15 +8,17 @@ export class SopRepositoryService {
 
   private readonly _loading = signal(false);
   private readonly _error = signal<string | null>(null);
-  private hasLoaded = false;
+  private readonly _initialLoadSucceeded = signal(false);
 
   readonly modules = computed(() => this.cms.sopTree());
   readonly glossary = computed(() => this.cms.glossary());
   readonly loading = this._loading.asReadonly();
   readonly error = this._error.asReadonly();
+  /** True after the first successful `loadContent()`; stays false if load fails. */
+  readonly initialLoadSucceeded = this._initialLoadSucceeded.asReadonly();
 
   async loadContent(): Promise<void> {
-    if (this.hasLoaded || this._loading()) {
+    if (this._initialLoadSucceeded() || this._loading()) {
       return;
     }
 
@@ -37,7 +39,7 @@ export class SopRepositoryService {
         throw new Error('Invalid glossary content format.');
       }
 
-      this.hasLoaded = true;
+      this._initialLoadSucceeded.set(true);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unable to load SOP content files.';
       this._error.set(message);

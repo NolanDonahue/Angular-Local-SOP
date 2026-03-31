@@ -42,6 +42,8 @@ body {
   --text-muted: rgba(219, 231, 255, 0.72);
   --azure-hover: rgba(66, 165, 245, 0.18);
   --azure-selected: rgba(66, 165, 245, 0.28);
+  --glossary-term-color: #8ecbff;
+  --error-text: #ffb4ab;
 }
 
 .category-routine {
@@ -68,6 +70,8 @@ body {
   --text-muted: rgba(27, 38, 56, 0.72);
   --azure-hover: rgba(25, 118, 210, 0.1);
   --azure-selected: rgba(25, 118, 210, 0.18);
+  --glossary-term-color: #1565c0;
+  --error-text: #b3261e;
 }
 
 [data-theme='light'] .category-routine {

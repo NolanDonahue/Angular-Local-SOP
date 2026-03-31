@@ -12,12 +12,15 @@ import { MatTreeModule, MatTreeNestedDataSource } from '@angular/material/tree';
 import { RouterLink } from '@angular/router';
 import { take } from 'rxjs';
 import { CmsApiService } from '../../core/services/cms-api.service';
+import { ViewStateService } from '../../core/services/view-state.service';
 import { GlossaryTerm, SopModule } from '../../core/models/sop.models';
 import { slugifyFromLabel, uniqueId } from '../../core/utils/content-markup';
 import {
   addChildModule,
   addRootModule,
+  collectModuleIds,
   newEmptyModule,
+  removeModuleFromTree,
   uniqueModuleId,
   updateModuleInTree,
 } from '../../core/utils/sop-tree-utils';
@@ -271,6 +274,7 @@ import { ModuleEditDialogComponent, ModuleEditDialogResult } from './module-edit
 })
 export class EditorComponent {
   readonly cms = inject(CmsApiService);
+  private readonly viewState = inject(ViewStateService);
   private readonly dialog = inject(MatDialog);
 
   readonly treeControl = new NestedTreeControl<SopModule>((n) => n.children);
@@ -411,6 +415,14 @@ export class EditorComponent {
       .pipe(take(1))
       .subscribe((r: ModuleEditDialogResult | undefined) => {
         if (!r) {
+          return;
+        }
+        if (r.action === 'delete') {
+          const ids = collectModuleIds([node]);
+          for (const id of ids) {
+            this.viewState.removeSelection(id);
+          }
+          this.cms.updateSopTree((tree) => removeModuleFromTree(tree, node.id));
           return;
         }
         this.cms.updateSopTree((tree) =>

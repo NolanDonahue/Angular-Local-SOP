@@ -6,7 +6,7 @@
     "start:api": "node scripts/local-cms.mjs",
     "start": "concurrently \"npm run start:api\" \"ng serve\"",
     "build": "npm run bundle-data:external && ng build && node scripts/build-file-static.mjs",
-    "build:external": "npm run bundle-data:external && ng build && node scripts/build-file-static.mjs",
+    "build:external": "npm run build",
     "build:local": "ng build --base-href ./",
     "build:portable": "npm run bundle-data:inline && npm run build:local",
     "build:portable:external": "npm run bundle-data:external && npm run build:local",

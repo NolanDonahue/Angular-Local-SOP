@@ -11,25 +11,34 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import {
   MAT_DIALOG_DATA,
+  MatDialog,
   MatDialogModule,
   MatDialogRef,
 } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
+import { take } from 'rxjs';
 import { CmsApiService } from '../../core/services/cms-api.service';
 import { SopCategory, SopModule } from '../../core/models/sop.models';
 import { glossaryToIdMap, markupToSegments, segmentsToMarkup } from '../../core/utils/content-markup';
+import {
+  DeleteModuleConfirmDialogComponent,
+  DeleteModuleConfirmDialogData,
+} from './delete-module-confirm-dialog.component';
 
 export interface ModuleEditDialogData {
   module: SopModule;
 }
 
-export interface ModuleEditDialogResult {
-  title: string;
-  category: SopCategory;
-  content: SopModule['content'];
-}
+export type ModuleEditDialogResult =
+  | {
+      action: 'save';
+      title: string;
+      category: SopCategory;
+      content: SopModule['content'];
+    }
+  | { action: 'delete' };
 
 @Component({
   selector: 'app-module-edit-dialog',
@@ -103,7 +112,9 @@ export interface ModuleEditDialogResult {
         </mat-form-field>
       </form>
     </mat-dialog-content>
-    <mat-dialog-actions align="end">
+    <mat-dialog-actions class="dialog-footer">
+      <button mat-stroked-button color="warn" type="button" (click)="confirmDelete()">Delete</button>
+      <span class="dialog-footer-spacer"></span>
       <button mat-button mat-dialog-close type="button">Cancel</button>
       <button mat-flat-button color="primary" type="button" (click)="done()" [disabled]="form.invalid">
         Done
@@ -142,8 +153,21 @@ export interface ModuleEditDialogResult {
       display: none;
     }
 
+    .dialog-footer {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .dialog-footer-spacer {
+      flex: 1;
+      min-width: 0.5rem;
+    }
+
     .error-text {
-      color: #ffb4ab;
+      color: var(--error-text);
       font-size: 0.85rem;
       align-self: center;
     }
@@ -152,6 +176,7 @@ export interface ModuleEditDialogResult {
 export class ModuleEditDialogComponent {
   private readonly fb = inject(FormBuilder);
   private readonly dialogRef = inject(MatDialogRef<ModuleEditDialogComponent, ModuleEditDialogResult>);
+  private readonly dialog = inject(MatDialog);
   private readonly cms = inject(CmsApiService);
   readonly data = inject<ModuleEditDialogData>(MAT_DIALOG_DATA);
 
@@ -235,6 +260,23 @@ export class ModuleEditDialogComponent {
     }
   }
 
+  confirmDelete(): void {
+    const title = this.form.controls.title.getRawValue()?.trim() || this.data.module.title;
+    const data: DeleteModuleConfirmDialogData = { moduleTitle: title };
+    this.dialog
+      .open(DeleteModuleConfirmDialogComponent, {
+        data,
+        width: 'min(420px, 92vw)',
+      })
+      .afterClosed()
+      .pipe(take(1))
+      .subscribe((confirmed) => {
+        if (confirmed) {
+          this.dialogRef.close({ action: 'delete' });
+        }
+      });
+  }
+
   done(): void {
     if (this.form.invalid) {
       return;
@@ -243,6 +285,7 @@ export class ModuleEditDialogComponent {
     const map = glossaryToIdMap(this.cms.glossary());
     const content = markupToSegments(raw.content, map);
     this.dialogRef.close({
+      action: 'save',
       title: raw.title,
       category: raw.category,
       content,

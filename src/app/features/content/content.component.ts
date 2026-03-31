@@ -1,4 +1,4 @@
-import { Component, inject, Input } from '@angular/core';
+import { Component, inject, input } from '@angular/core';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ContentSegment } from '../../core/models/sop.models';
 import { SopRepositoryService } from '../../core/services/sop-repository.service';
@@ -8,7 +8,7 @@ import { SopRepositoryService } from '../../core/services/sop-repository.service
   standalone: true,
   imports: [MatTooltipModule],
   template: `
-    @for (segment of segments; track $index) {
+    @for (segment of segments(); track $index) {
       @switch (segment.type) {
         @case ('text') {
           <span>{{ segment.value }}</span>
@@ -31,7 +31,7 @@ import { SopRepositoryService } from '../../core/services/sop-repository.service
       border-bottom: 1px dashed currentColor;
       cursor: help;
       font-weight: 600;
-      color: #8ecbff;
+      color: var(--glossary-term-color);
     }
 
     .inline-sop-image {
@@ -45,7 +45,7 @@ import { SopRepositoryService } from '../../core/services/sop-repository.service
   `,
 })
 export class SopContentComponent {
-  @Input({ required: true }) segments: ContentSegment[] = [];
+  readonly segments = input.required<ContentSegment[]>();
 
   readonly repository = inject(SopRepositoryService);
 

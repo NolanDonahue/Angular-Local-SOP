@@ -3,7 +3,7 @@ import { Component, inject, Input } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { SopModule } from '../../core/models/sop.models';
-import { SearchService } from '../../core/services/search.service';
+import { SearchResult } from '../../core/services/search.service';
 import { ViewStateService } from '../../core/services/view-state.service';
 
 @Component({
@@ -11,9 +11,9 @@ import { ViewStateService } from '../../core/services/view-state.service';
   standalone: true,
   imports: [NgTemplateOutlet, MatButtonModule, MatIconModule],
   template: `
-    @if (query.trim()) {
+    @if (searchResults !== null) {
       <section class="search-results">
-        @for (result of search.search(query); track result.item.id) {
+        @for (result of searchResults; track result.item.id) {
           @if (result.kind === 'module') {
             <button type="button" class="result module" (click)="addToWorkspace(result.item.id)">
               {{ result.item.title }}
@@ -24,7 +24,7 @@ import { ViewStateService } from '../../core/services/view-state.service';
             </p>
           }
         } @empty {
-          <p class="empty">No matches for "{{ query }}".</p>
+          <p class="empty">No matches for "{{ searchQueryDisplay }}".</p>
         }
       </section>
     } @else {
@@ -150,10 +150,10 @@ import { ViewStateService } from '../../core/services/view-state.service';
 })
 export class SidebarTreeComponent {
   @Input({ required: true }) modules: SopModule[] = [];
-  @Input() query = '';
-
+  /** `null` when the sidebar should show the tree; otherwise Fuse results for the current query. */
+  @Input() searchResults: SearchResult[] | null = null;
+  @Input() searchQueryDisplay = '';
   readonly viewState = inject(ViewStateService);
-  readonly search = inject(SearchService);
 
   toggleNode(id: string): void {
     this.viewState.setTreeExpanded(id, !this.viewState.isTreeExpanded(id));

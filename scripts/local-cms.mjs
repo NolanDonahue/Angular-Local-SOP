@@ -18,7 +18,23 @@ const preferredPort = 3000;
 const fallbackPortCount = 20;
 
 const app = express();
-app.use(cors());
+const allowedOrigins = new Set([
+  'http://localhost:4200',
+  'http://127.0.0.1:4200',
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+]);
+app.use(
+  cors({
+    origin(origin, callback) {
+      if (!origin || allowedOrigins.has(origin)) {
+        callback(null, true);
+        return;
+      }
+      callback(null, false);
+    },
+  }),
+);
 app.use(express.json({ limit: '50mb' }));
 app.use('/assets', express.static(assetsDir));
 
