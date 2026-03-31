@@ -1,3 +1,4 @@
+import { moveItemInArray } from '@angular/cdk/drag-drop';
 import { SopModule } from '../models/sop.models';
 
 export function collectModuleIds(nodes: SopModule[], out = new Set<string>()): Set<string> {
@@ -44,7 +45,11 @@ export function addRootModule(nodes: SopModule[], child: SopModule): SopModule[]
   return [...nodes, child];
 }
 
-export function addChildModule(nodes: SopModule[], parentId: string, child: SopModule): SopModule[] {
+export function addChildModule(
+  nodes: SopModule[],
+  parentId: string,
+  child: SopModule,
+): SopModule[] {
   return nodes.map((node) => {
     if (node.id === parentId) {
       return { ...node, children: [...node.children, child] };
@@ -78,4 +83,34 @@ export function removeModuleFromTree(nodes: SopModule[], moduleId: string): SopM
     ...node,
     children: removeModuleFromTree(node.children, moduleId),
   }));
+}
+
+export function reorderModuleChildren(
+  nodes: SopModule[],
+  parentId: string,
+  previousIndex: number,
+  currentIndex: number,
+): SopModule[] {
+  return nodes.map((node) => {
+    if (node.id === parentId) {
+      const children = [...node.children];
+      if (
+        previousIndex < 0 ||
+        currentIndex < 0 ||
+        previousIndex >= children.length ||
+        currentIndex >= children.length
+      ) {
+        return node;
+      }
+      moveItemInArray(children, previousIndex, currentIndex);
+      return { ...node, children };
+    }
+    if (node.children.length) {
+      return {
+        ...node,
+        children: reorderModuleChildren(node.children, parentId, previousIndex, currentIndex),
+      };
+    }
+    return node;
+  });
 }

@@ -1,3 +1,4 @@
+import { DragDropModule, CdkDragDrop } from '@angular/cdk/drag-drop';
 import { CommonModule } from '@angular/common';
 import { Component, computed, effect, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
@@ -29,6 +30,7 @@ import {
   standalone: true,
   imports: [
     CommonModule,
+    DragDropModule,
     FormsModule,
     MatButtonModule,
     MatFormFieldModule,
@@ -60,9 +62,7 @@ import {
             }
           </mat-form-field>
           <a mat-stroked-button routerLink="/glossary">Glossary</a>
-          <button mat-stroked-button type="button" (click)="openPresets()">
-            Presets
-          </button>
+          <button mat-stroked-button type="button" (click)="openPresets()">Presets</button>
           <button
             mat-flat-button
             color="primary"
@@ -117,10 +117,23 @@ import {
             @if (!selectedModules().length) {
               <p class="empty">Select titles from the sidebar to add content here.</p>
             } @else {
-              <div class="workspace-list">
+              <div
+                class="workspace-list"
+                cdkDropList
+                (cdkDropListDropped)="onWorkspaceDrop($event)"
+              >
                 @for (module of selectedModules(); track module.id) {
-                  <article class="workspace-item">
+                  <article class="workspace-item" cdkDrag>
                     <div class="workspace-item-header">
+                      <button
+                        mat-icon-button
+                        type="button"
+                        class="workspace-drag-handle"
+                        cdkDragHandle
+                        aria-label="Drag to reorder"
+                      >
+                        <mat-icon svgIcon="grip-lines" />
+                      </button>
                       <h3>{{ module.title }}</h3>
                       <button
                         mat-icon-button
@@ -224,14 +237,39 @@ import {
 
     .workspace-item-header {
       display: flex;
-      justify-content: space-between;
       align-items: center;
-      gap: 0.5rem;
+      gap: 0.35rem;
+    }
+
+    .workspace-drag-handle {
+      flex-shrink: 0;
+      cursor: grab;
+      color: var(--text-muted);
+    }
+
+    .workspace-drag-handle:active {
+      cursor: grabbing;
     }
 
     .workspace-item-header h3 {
       margin: 0;
       font-size: 1rem;
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+
+    .workspace-list .cdk-drag-placeholder {
+      opacity: 0.45;
+      border: 1px dashed var(--border-subtle);
+      border-radius: 10px;
+      min-height: 3rem;
+      background: var(--surface-2);
+    }
+
+    .workspace-list .cdk-drag-preview {
+      box-sizing: border-box;
+      border-radius: 10px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
     }
 
     .empty {
@@ -329,6 +367,10 @@ export class TocComponent {
 
   collapseSelectedContent(): void {
     this.viewState.collapseAll();
+  }
+
+  onWorkspaceDrop(event: CdkDragDrop<unknown>): void {
+    this.viewState.reorderSelectedModules(event.previousIndex, event.currentIndex);
   }
 
   private loadConfig(configId: string, syncUrl = true): void {

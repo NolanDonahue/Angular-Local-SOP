@@ -1,3 +1,4 @@
+import { moveItemInArray } from '@angular/cdk/drag-drop';
 import { Injectable, signal } from '@angular/core';
 
 @Injectable({ providedIn: 'root' })
@@ -59,6 +60,25 @@ export class ViewStateService {
 
   removeSelection(id: string): void {
     this._selectedModuleIds.update((ids) => ids.filter((existingId) => existingId !== id));
+  }
+
+  reorderSelectedModules(previousIndex: number, currentIndex: number): void {
+    if (previousIndex === currentIndex) {
+      return;
+    }
+    this._selectedModuleIds.update((ids) => {
+      if (
+        previousIndex < 0 ||
+        currentIndex < 0 ||
+        previousIndex >= ids.length ||
+        currentIndex >= ids.length
+      ) {
+        return ids;
+      }
+      const next = [...ids];
+      moveItemInArray(next, previousIndex, currentIndex);
+      return next;
+    });
   }
 
   applySelection(ids: string[]): void {

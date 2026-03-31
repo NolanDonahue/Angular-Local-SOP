@@ -1,6 +1,5 @@
-import { NestedTreeControl } from '@angular/cdk/tree';
 import { CommonModule } from '@angular/common';
-import { Component, computed, effect, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
@@ -8,7 +7,6 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatTableModule } from '@angular/material/table';
 import { MatTabsModule } from '@angular/material/tabs';
-import { MatTreeModule, MatTreeNestedDataSource } from '@angular/material/tree';
 import { RouterLink } from '@angular/router';
 import { take } from 'rxjs';
 import { CmsApiService } from '../../core/services/cms-api.service';
@@ -24,6 +22,7 @@ import {
   uniqueModuleId,
   updateModuleInTree,
 } from '../../core/utils/sop-tree-utils';
+import { EditorSopTreeComponent } from './editor-sop-tree.component';
 import { ModuleEditDialogComponent, ModuleEditDialogResult } from './module-edit-dialog.component';
 
 @Component({
@@ -38,8 +37,8 @@ import { ModuleEditDialogComponent, ModuleEditDialogResult } from './module-edit
     MatTableModule,
     MatFormFieldModule,
     MatInputModule,
-    MatTreeModule,
     MatDialogModule,
+    EditorSopTreeComponent,
   ],
   template: `
     <main class="page">
@@ -73,39 +72,13 @@ import { ModuleEditDialogComponent, ModuleEditDialogResult } from './module-edit
               }
             </div>
 
-            <mat-tree [dataSource]="dataSource" [treeControl]="treeControl" class="sop-tree">
-              <mat-nested-tree-node *matTreeNodeDef="let node">
-                <li class="tree-node">
-                  <div class="tree-line">
-                    @if (node.children.length) {
-                      <button
-                        mat-icon-button
-                        matTreeNodeToggle
-                        type="button"
-                        [attr.aria-label]="'toggle ' + node.title"
-                        class="tree-toggle"
-                      >
-                        <span class="tree-chevron" aria-hidden="true">{{
-                          treeControl.isExpanded(node) ? '▾' : '▸'
-                        }}</span>
-                      </button>
-                    } @else {
-                      <span class="tree-toggle-spacer" aria-hidden="true"></span>
-                    }
-                    <span class="node-title">{{ node.title }}</span>
-                    <button mat-stroked-button type="button" (click)="editModule(node)">
-                      Edit
-                    </button>
-                    <button mat-stroked-button type="button" (click)="addChildModule(node)">
-                      Add child
-                    </button>
-                  </div>
-                  <ul class="nested" [class.nested-collapsed]="!treeControl.isExpanded(node)">
-                    <ng-container matTreeNodeOutlet></ng-container>
-                  </ul>
-                </li>
-              </mat-nested-tree-node>
-            </mat-tree>
+            <app-editor-sop-tree
+              [modules]="cms.sopTree()"
+              [expandedIds]="expandedIds()"
+              (expandToggled)="onExpandToggled($event)"
+              (editRequested)="editModule($event)"
+              (addChildRequested)="addChildModule($event)"
+            />
           </div>
         </mat-tab>
 
@@ -226,50 +199,6 @@ import { ModuleEditDialogComponent, ModuleEditDialogResult } from './module-edit
       flex: 1;
       min-width: 220px;
     }
-
-    .sop-tree {
-      list-style: none;
-      padding: 0;
-      margin: 0;
-    }
-
-    .tree-node {
-      list-style: none;
-    }
-
-    .tree-line {
-      display: flex;
-      align-items: center;
-      gap: 0.35rem;
-      flex-wrap: wrap;
-      padding: 0.2rem 0;
-    }
-
-    .node-title {
-      flex: 1;
-      min-width: 120px;
-    }
-
-    .nested {
-      margin: 0;
-      padding-left: 1.5rem;
-      border-left: 2px solid var(--border-subtle);
-    }
-
-    .nested-collapsed {
-      display: none;
-    }
-
-    .tree-chevron {
-      font-size: 1rem;
-      line-height: 1;
-    }
-
-    .tree-toggle-spacer {
-      display: inline-block;
-      width: 40px;
-      flex-shrink: 0;
-    }
   `,
 })
 export class EditorComponent {
@@ -277,8 +206,7 @@ export class EditorComponent {
   private readonly viewState = inject(ViewStateService);
   private readonly dialog = inject(MatDialog);
 
-  readonly treeControl = new NestedTreeControl<SopModule>((n) => n.children);
-  readonly dataSource = new MatTreeNestedDataSource<SopModule>();
+  readonly expandedIds = signal<ReadonlySet<string>>(new Set());
 
   readonly saving = signal(false);
   readonly saveError = signal<string | null>(null);
@@ -292,66 +220,16 @@ export class EditorComponent {
   newTermLabel = '';
   newDefinition = '';
 
-  /** Set before `updateSopTree` in `addChildModule`; applied when the tree effect runs. */
-  private pendingAutoExpandModuleId: string | null = null;
-
-  constructor() {
-    effect(() => {
-      const expandedIds = this.collectExpandedModuleIds(this.dataSource.data ?? []);
-      this.dataSource.data = this.cms.sopTree();
-      this.expandNodesById(this.dataSource.data ?? [], expandedIds);
-      const pendingId = this.pendingAutoExpandModuleId;
-      if (pendingId) {
-        const node = this.findModuleById(this.dataSource.data ?? [], pendingId);
-        if (node) {
-          this.treeControl.expand(node);
-        }
-        this.pendingAutoExpandModuleId = null;
+  onExpandToggled(id: string): void {
+    this.expandedIds.update((s) => {
+      const next = new Set(s);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
       }
+      return next;
     });
-  }
-
-  private collectExpandedModuleIds(nodes: SopModule[]): Set<string> {
-    const ids = new Set<string>();
-    const walk = (list: SopModule[]): void => {
-      for (const n of list) {
-        if (this.treeControl.isExpanded(n)) {
-          ids.add(n.id);
-        }
-        if (n.children.length) {
-          walk(n.children);
-        }
-      }
-    };
-    walk(nodes);
-    return ids;
-  }
-
-  private expandNodesById(nodes: SopModule[], ids: Set<string>): void {
-    const walk = (list: SopModule[]): void => {
-      for (const n of list) {
-        if (ids.has(n.id)) {
-          this.treeControl.expand(n);
-        }
-        if (n.children.length) {
-          walk(n.children);
-        }
-      }
-    };
-    walk(nodes);
-  }
-
-  private findModuleById(nodes: SopModule[], id: string): SopModule | null {
-    for (const n of nodes) {
-      if (n.id === id) {
-        return n;
-      }
-      const found = this.findModuleById(n.children, id);
-      if (found) {
-        return found;
-      }
-    }
-    return null;
   }
 
   addGlossaryTerm(): void {
@@ -399,8 +277,13 @@ export class EditorComponent {
     const title = 'New child';
     const tree = this.cms.sopTree();
     const id = uniqueModuleId(title, tree);
-    this.pendingAutoExpandModuleId = id;
     this.cms.updateSopTree((nodes) => addChildModule(nodes, parent.id, newEmptyModule(title, id)));
+    this.expandedIds.update((s) => {
+      const next = new Set(s);
+      next.add(parent.id);
+      next.add(id);
+      return next;
+    });
   }
 
   editModule(node: SopModule): void {
