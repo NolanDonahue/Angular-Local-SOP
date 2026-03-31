@@ -1,11 +1,36 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
+import { parseArgs } from 'node:util';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const projectRoot = resolve(__dirname, '..');
-const imageMode = process.env.BUNDLE_IMAGE_MODE === 'external' ? 'external' : 'inline';
+
+/** @param {string[]} argv */
+function resolveImageMode(argv) {
+  const { values } = parseArgs({
+    args: argv,
+    options: {
+      inline: { type: 'boolean', default: false },
+      external: { type: 'boolean', default: false },
+    },
+    allowPositionals: true,
+    strict: true,
+  });
+  if (values.inline && values.external) {
+    throw new Error('Use only one of --inline or --external');
+  }
+  if (values.external) {
+    return 'external';
+  }
+  if (values.inline) {
+    return 'inline';
+  }
+  return process.env.BUNDLE_IMAGE_MODE === 'external' ? 'external' : 'inline';
+}
+
+const imageMode = resolveImageMode(process.argv.slice(2));
 
 const sopJsonPath = resolve(projectRoot, 'src/assets/content/sop.json');
 const glossaryJsonPath = resolve(projectRoot, 'src/assets/content/glossary.json');
@@ -214,7 +239,7 @@ async function main() {
   ]);
 
   console.log(
-    `Bundled SOP, glossary, and workspace config presets into TypeScript constants (BUNDLE_IMAGE_MODE=${imageMode}).`,
+    `Bundled SOP, glossary, and workspace config presets into TypeScript constants (image mode: ${imageMode}).`,
   );
 }
 
