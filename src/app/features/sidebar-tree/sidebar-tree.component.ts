@@ -44,7 +44,9 @@ import { ViewStateService } from '../../core/services/view-state.service';
                   (click)="toggleNode(node.id)"
                   [attr.aria-label]="'Toggle ' + node.title"
                 >
-                  <mat-icon [svgIcon]="viewState.isTreeExpanded(node.id) ? 'down-arrow' : 'right-arrow'" />
+                  <mat-icon
+                    [svgIcon]="viewState.isTreeExpanded(node.id) ? 'down-arrow' : 'right-arrow'"
+                  />
                 </button>
               } @else {
                 <span class="toggle-spacer"></span>
