@@ -22,6 +22,10 @@ import {
   uniqueModuleId,
   updateModuleInTree,
 } from '../../core/utils/sop-tree-utils';
+import {
+  DeleteGlossaryTermConfirmDialogComponent,
+  DeleteGlossaryTermConfirmDialogData,
+} from './delete-glossary-term-confirm-dialog.component';
 import { EditorSopTreeComponent } from './editor-sop-tree.component';
 import { ModuleEditDialogComponent, ModuleEditDialogResult } from './module-edit-dialog.component';
 
@@ -115,7 +119,7 @@ import { ModuleEditDialogComponent, ModuleEditDialogResult } from './module-edit
               <ng-container matColumnDef="actions">
                 <th mat-header-cell *matHeaderCellDef></th>
                 <td mat-cell *matCellDef="let row">
-                  <button mat-button type="button" (click)="removeGlossaryTerm(row.id)">
+                  <button mat-button type="button" (click)="confirmRemoveGlossaryTerm(row)">
                     Remove
                   </button>
                 </td>
@@ -249,8 +253,20 @@ export class EditorComponent {
     this.newDefinition = '';
   }
 
-  removeGlossaryTerm(id: string): void {
-    this.cms.updateGlossary((g) => g.filter((t) => t.id !== id));
+  confirmRemoveGlossaryTerm(term: GlossaryTerm): void {
+    const data: DeleteGlossaryTermConfirmDialogData = {
+      termLabel: term.term,
+      termId: term.id,
+    };
+    this.dialog
+      .open(DeleteGlossaryTermConfirmDialogComponent, { data, width: '480px', maxWidth: '95vw' })
+      .afterClosed()
+      .pipe(take(1))
+      .subscribe((confirmed) => {
+        if (confirmed) {
+          this.cms.updateGlossary((g) => g.filter((t) => t.id !== term.id));
+        }
+      });
   }
 
   async saveGlossary(): Promise<void> {

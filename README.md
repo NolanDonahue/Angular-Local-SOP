@@ -124,6 +124,7 @@ npm start
 - `npm run build:external` — **alias for `npm run build`** (same script)
 - `npm run build:local` — production build with relative base paths (`--base-href ./`) without the full `build` pipeline
 - `npm run build:portable` — bundle data (inline images), then portable local build
+- `npm run build:portable:external` — bundle data in external image mode, then the same portable local build as `build:local` (relative base); skips the full `build` pipeline and file-static post-processing
 - `npm run build:file-static` — rewrite build output into a single file-static JS entry
 - `npm run check:external-bundle` — verify generated SOP data has no `base64Data` and print file size stats
 - `npm run verify:bundle-paths` — static check that bundled asset paths stay within expected roots

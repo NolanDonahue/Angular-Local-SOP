@@ -1,5 +1,5 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { Component, inject, Input } from '@angular/core';
+import { Component, inject, input } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { SopModule } from '../../core/models/sop.models';
@@ -11,9 +11,9 @@ import { ViewStateService } from '../../core/services/view-state.service';
   standalone: true,
   imports: [NgTemplateOutlet, MatButtonModule, MatIconModule],
   template: `
-    @if (searchResults !== null) {
+    @if (searchResults() !== null) {
       <section class="search-results">
-        @for (result of searchResults; track result.item.id) {
+        @for (result of searchResults()!; track result.item.id) {
           @if (result.kind === 'module') {
             <button type="button" class="result module" (click)="addToWorkspace(result.item.id)">
               {{ result.item.title }}
@@ -24,11 +24,11 @@ import { ViewStateService } from '../../core/services/view-state.service';
             </p>
           }
         } @empty {
-          <p class="empty">No matches for "{{ searchQueryDisplay }}".</p>
+          <p class="empty">No matches for "{{ searchQueryDisplay() }}".</p>
         }
       </section>
     } @else {
-      <ng-container *ngTemplateOutlet="treeTemplate; context: { $implicit: modules, depth: 0 }" />
+      <ng-container *ngTemplateOutlet="treeTemplate; context: { $implicit: modules(), depth: 0 }" />
     }
 
     <ng-template #treeTemplate let-nodes let-depth="depth">
@@ -151,10 +151,10 @@ import { ViewStateService } from '../../core/services/view-state.service';
   `,
 })
 export class SidebarTreeComponent {
-  @Input({ required: true }) modules: SopModule[] = [];
+  readonly modules = input.required<SopModule[]>();
   /** `null` when the sidebar should show the tree; otherwise Fuse results for the current query. */
-  @Input() searchResults: SearchResult[] | null = null;
-  @Input() searchQueryDisplay = '';
+  readonly searchResults = input<SearchResult[] | null>(null);
+  readonly searchQueryDisplay = input('');
   readonly viewState = inject(ViewStateService);
 
   toggleNode(id: string): void {
