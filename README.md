@@ -118,14 +118,14 @@ npm start
 ## Commands
 
 - `npm start` — local dev server (`ng serve`) plus `scripts/local-cms.mjs` for the editor API
-- `npm run bundle-data` — convert JSON content into generated TypeScript constants (external image mode by default)
-- `npm run bundle-data:inline` — generate SOP data with inlined image base64 payloads for offline/single-file use
-- `npm run build` — standard Angular production build (bundles external images, then `ng build`, then file-static post-processing)
+- `npm run bundle-data` — convert JSON content into generated TypeScript constants (image `src` paths under `assets/images/`, no base64)
+- `npm run bundle-data:external` — alias for `npm run bundle-data`
+- `npm run build` — `bundle-data`, production `ng build`, then inline JS/CSS into `sop-viewer-standalone.html` (see [Build and distribution](#build-and-distribution))
 - `npm run build:external` — **alias for `npm run build`** (same script)
-- `npm run build:local` — production build with relative base paths (`--base-href ./`) without the full `build` pipeline
-- `npm run build:portable` — bundle data (inline images), then portable local build
-- `npm run build:portable:external` — bundle data in external image mode, then the same portable local build as `build:local` (relative base); skips the full `build` pipeline and file-static post-processing
-- `npm run build:file-static` — rewrite build output into a single file-static JS entry
+- `npm run build:local` — production build with relative base paths (`--base-href ./`) without `bundle-data` or file-static post-processing
+- `npm run build:portable` — `bundle-data`, `ng build --base-href ./`, then same inline HTML step as `build` (artifact: standalone HTML + `assets/` folder)
+- `npm run build:portable:external` — `bundle-data` and `build:local` only (no inline HTML step; keeps hashed `main-*.js` / chunks)
+- `npm run build:file-static` — run the inline HTML step on an existing `dist/sop-viewer/browser` output (after `ng build`)
 - `npm run check:external-bundle` — verify generated SOP data has no `base64Data` and print file size stats
 - `npm run verify:bundle-paths` — static check that bundled asset paths stay within expected roots
 - `npm run preview:dist` — serve built app from `dist/sop-viewer/browser` on port `8080`
@@ -134,27 +134,51 @@ npm start
 
 ## Build and distribution
 
-For most offline/static distribution use:
+Detailed layout and `file://` usage are described in [Portable release (zip)](#portable-release-zip) below.
+
+For a full production artifact (inlined app script/styles + external assets):
+
+```bash
+npm run build
+```
+
+or equivalently for the same inline step with explicit base href:
 
 ```bash
 npm run build:portable
 ```
 
-Artifacts are written under `dist/sop-viewer/`.
+Artifacts are written under `dist/sop-viewer/browser/` (`sop-viewer-standalone.html`, `index.html`, and `assets/`).
 
-If your host cannot reliably run module-based entry scripts, use:
+To re-run only the inline HTML step after a manual `ng build`:
 
 ```bash
 npm run build:file-static
 ```
 
-Then validate from a local static server:
+Validate from a local static server:
 
 ```bash
 npm run preview:dist
 ```
 
-Before sharing a build, run the checks in [Validation checklist](#validation-checklist) (including `verify:bundle-paths` and, when using external image mode, `check:external-bundle`).
+Before sharing a build, run the checks in [Validation checklist](#validation-checklist) (including `verify:bundle-paths` and `check:external-bundle`).
+
+## Portable release (zip)
+
+After `npm run build` or `npm run build:portable`, ship a folder or zip such as:
+
+```text
+SOP-Release/
+├── sop-viewer-standalone.html   # HTML + inlined app JS/CSS + bundled SOP data
+├── index.html                   # same document as standalone (optional; useful for static servers)
+└── assets/                      # images, icons, content JSON copies from the build
+    ├── images/                  # SOP images (when present)
+    ├── icons/
+    └── content/
+```
+
+Users extract the archive, keep **`sop-viewer-standalone.html`** and **`assets/`** in the same directory, and open the standalone file (double-click or `file://`). Inlined JavaScript and CSS reduce issues with policies that block external local scripts; images load via `<img src="assets/images/...">` relative to the HTML file without fetch/CORS on `file://`.
 
 ## Validation checklist
 
@@ -164,4 +188,4 @@ Before sharing a build, run the checks in [Validation checklist](#validation-che
 - Every SOP `termId` exists in `glossary.json`.
 - Preset `moduleIds` in `workspace-config-presets.json` reference existing SOP modules.
 - App loads without SOP/glossary format errors.
-- Before distributing a build: `npm run verify:bundle-paths`; if you rely on external (non-inlined) images in the bundle, also run `npm run check:external-bundle`.
+- Before distributing a build: `npm run verify:bundle-paths` and `npm run check:external-bundle`.

@@ -303,7 +303,7 @@ export class EditorComponent {
   }
 
   editModule(node: SopModule): void {
-    const shallow = JSON.parse(JSON.stringify(node)) as SopModule;
+    const shallow = structuredClone(node);
     this.dialog
       .open(ModuleEditDialogComponent, {
         data: { module: shallow },

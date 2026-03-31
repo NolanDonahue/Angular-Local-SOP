@@ -13,7 +13,7 @@ export interface UploadedImageRef {
 }
 
 function deepClone<T>(value: T): T {
-  return JSON.parse(JSON.stringify(value)) as T;
+  return structuredClone(value);
 }
 
 @Injectable({ providedIn: 'root' })

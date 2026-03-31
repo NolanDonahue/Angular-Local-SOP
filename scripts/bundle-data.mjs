@@ -1,7 +1,5 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
-import { readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
-import { parseArgs } from 'node:util';
 import { fileURLToPath } from 'node:url';
 
 import { publicAssetsImageSrc, resolveSafeImagePath } from './lib/safe-image-path.mjs';
@@ -9,31 +7,6 @@ import { publicAssetsImageSrc, resolveSafeImagePath } from './lib/safe-image-pat
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const projectRoot = resolve(__dirname, '..');
 const imagesRoot = resolve(projectRoot, 'src/assets/images');
-
-/** @param {string[]} argv */
-function resolveImageMode(argv) {
-  const { values } = parseArgs({
-    args: argv,
-    options: {
-      inline: { type: 'boolean', default: false },
-      external: { type: 'boolean', default: false },
-    },
-    allowPositionals: true,
-    strict: true,
-  });
-  if (values.inline && values.external) {
-    throw new Error('Use only one of --inline or --external');
-  }
-  if (values.external) {
-    return 'external';
-  }
-  if (values.inline) {
-    return 'inline';
-  }
-  return process.env.BUNDLE_IMAGE_MODE === 'external' ? 'external' : 'inline';
-}
-
-const imageMode = resolveImageMode(process.argv.slice(2));
 
 const sopJsonPath = resolve(projectRoot, 'src/assets/content/sop.json');
 const glossaryJsonPath = resolve(projectRoot, 'src/assets/content/glossary.json');
@@ -96,22 +69,11 @@ function parseContent(contentString, glossaryTerms) {
           alt: match[2] ? match[2].trim() : 'SOP Image',
         });
       } else {
-        const imageSegment = {
+        segments.push({
           type: 'image',
           src: publicAssetsImageSrc(imagesRoot, imagePath),
           alt: match[2] ? match[2].trim() : 'SOP Image',
-        };
-
-        if (imageMode === 'inline') {
-          try {
-            const imageBuffer = readFileSync(imagePath);
-            imageSegment.base64Data = imageBuffer.toString('base64');
-          } catch {
-            console.warn(`⚠️ Could not read image for base64 encoding: ${imagePath}`);
-          }
-        }
-
-        segments.push(imageSegment);
+        });
       }
     } else if (match[3]) {
       const termId = match[3].trim().toLowerCase();
@@ -139,35 +101,6 @@ function parseContent(contentString, glossaryTerms) {
   }
 
   return segments;
-}
-
-function toAssetsImagePath(imageSrc) {
-  if (typeof imageSrc !== 'string') {
-    return null;
-  }
-  const cleaned = imageSrc.trim().replace(/^\.?\//, '');
-  if (!cleaned.startsWith('assets/images/')) {
-    return null;
-  }
-  const relativePart = cleaned.slice('assets/images/'.length);
-  return resolveSafeImagePath(imagesRoot, relativePart);
-}
-
-function readImageBase64(imageSrc) {
-  if (imageMode !== 'inline') {
-    return undefined;
-  }
-  const imagePath = toAssetsImagePath(imageSrc);
-  if (!imagePath) {
-    return undefined;
-  }
-  try {
-    const imageBuffer = readFileSync(imagePath);
-    return imageBuffer.toString('base64');
-  } catch {
-    console.warn(`⚠️ Could not read image for base64 encoding: ${imagePath}`);
-    return undefined;
-  }
 }
 
 /** @param {unknown} content */
@@ -202,19 +135,9 @@ function normalizeContentSegments(content) {
     }
 
     const im = /** @type {Record<string, unknown>} */ (imageSeg);
-
-    if (imageMode === 'external') {
-      // External mode never ships inlined base64 payloads.
-      const imageWithoutBase64 = { ...im };
-      delete imageWithoutBase64.base64Data;
-      return imageWithoutBase64;
-    }
-
-    const base64Data =
-      typeof im.base64Data === 'string' && im.base64Data.length > 0
-        ? im.base64Data
-        : readImageBase64(im.src);
-    return base64Data ? { ...im, base64Data } : imageSeg;
+    const rest = { ...im };
+    delete rest.base64Data;
+    return rest;
   });
 }
 
@@ -268,9 +191,7 @@ async function main() {
     ),
   ]);
 
-  console.log(
-    `Bundled SOP, glossary, and workspace config presets into TypeScript constants (image mode: ${imageMode}).`,
-  );
+  console.log('Bundled SOP, glossary, and workspace config presets into TypeScript constants (external image paths).');
 }
 
 main().catch((error) => {

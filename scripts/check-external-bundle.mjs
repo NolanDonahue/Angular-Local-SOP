@@ -37,7 +37,7 @@ async function main() {
     throw new Error('External bundle check failed: found base64Data in generated sop.data.ts.');
   }
 
-  console.log(`OK: sop.data.ts contains no base64Data fields.`);
+  console.log(`OK: sop.data.ts contains no base64Data (external image paths only).`);
   console.log(`sop.data.ts size: ${formatKb(fileStats.size)}`);
   await reportBrowserJsSizes();
 }

@@ -15,8 +15,6 @@ export interface ImageSegment {
   type: 'image';
   src: string;
   alt: string;
-  // Optional inline payload for legacy/offline builds.
-  base64Data?: string;
 }
 
 export type ContentSegment = TextSegment | TermSegment | ImageSegment;
