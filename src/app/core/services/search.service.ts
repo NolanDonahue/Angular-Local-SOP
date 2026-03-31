@@ -1,6 +1,7 @@
 import { Injectable, computed, inject } from '@angular/core';
 import Fuse from 'fuse.js';
 import { GlossaryTerm, SopModule } from '../models/sop.models';
+import { flattenModules } from '../utils/sop-module-tree';
 import { SopRepositoryService } from './sop-repository.service';
 
 export type SearchResult =
@@ -11,7 +12,7 @@ export type SearchResult =
 export class SearchService {
   private readonly moduleIndex = computed(
     () =>
-      new Fuse(this.flatten(this.repository.modules()), {
+      new Fuse(flattenModules(this.repository.modules()), {
         keys: ['title', 'tags', 'content.value', 'content.display'],
         threshold: 0.2,
       }),
@@ -40,9 +41,5 @@ export class SearchService {
       .map((result) => ({ kind: 'term' as const, item: result.item }));
 
     return [...moduleHits, ...termHits];
-  }
-
-  private flatten(nodes: SopModule[]): SopModule[] {
-    return nodes.flatMap((node) => [node, ...this.flatten(node.children)]);
   }
 }

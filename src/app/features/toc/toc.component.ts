@@ -1,22 +1,25 @@
 import { DragDropModule, CdkDragDrop } from '@angular/cdk/drag-drop';
 import { CommonModule } from '@angular/common';
 import { Component, computed, effect, inject, signal } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
+import { MatChipListboxChange, MatChipsModule } from '@angular/material/chips';
+import { MatDialog } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
-import { MatDialog } from '@angular/material/dialog';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { map } from 'rxjs';
+import { Subject } from 'rxjs';
+import { debounceTime, distinctUntilChanged, map } from 'rxjs';
 import { ExportService } from '../../core/services/export.service';
 import { SopModule } from '../../core/models/sop.models';
-import { SearchService } from '../../core/services/search.service';
+import { SearchResult, SearchService } from '../../core/services/search.service';
 import { SopRepositoryService } from '../../core/services/sop-repository.service';
 import { ViewStateService } from '../../core/services/view-state.service';
 import { WorkspaceConfigService } from '../../core/services/workspace-config.service';
+import { collectUniqueSortedTags, filterModuleTreeByTags } from '../../core/utils/sop-module-tree';
 import { ModuleItemComponent } from '../module-item/module-item.component';
 import { SidebarTreeComponent } from '../sidebar-tree/sidebar-tree.component';
 import {
@@ -33,6 +36,7 @@ import {
     DragDropModule,
     FormsModule,
     MatButtonModule,
+    MatChipsModule,
     MatFormFieldModule,
     MatInputModule,
     MatProgressBarModule,
@@ -48,14 +52,18 @@ import {
         <div class="toolbar-actions">
           <mat-form-field appearance="outline" class="search">
             <mat-label>Search sidebar titles and glossary</mat-label>
-            <input matInput [ngModel]="searchQuery()" (ngModelChange)="searchQuery.set($event)" />
+            <input
+              matInput
+              [ngModel]="searchQuery()"
+              (ngModelChange)="onSearchInput($event)"
+            />
             @if (searchQuery()) {
               <button
                 matSuffix
                 mat-icon-button
                 type="button"
                 aria-label="Clear search"
-                (click)="searchQuery.set('')"
+                (click)="clearSearch()"
               >
                 <mat-icon>close</mat-icon>
               </button>
@@ -84,10 +92,29 @@ import {
         <section class="layout">
           <aside class="sidebar">
             <h2>Content Titles</h2>
+            @if (allTags().length) {
+              <mat-chip-listbox
+                class="tag-filter"
+                multiple
+                aria-label="Filter by tag"
+                [value]="selectedTagsArray()"
+                (change)="onTagFilterChange($event)"
+              >
+                @for (tag of allTags(); track tag) {
+                  <mat-chip-option [value]="tag">{{ tag }}</mat-chip-option>
+                }
+              </mat-chip-listbox>
+            }
+            @if (selectedTags().size && !sidebarTreeModules().length && sidebarSearchResults() === null) {
+              <p class="sidebar-hint">No modules with selected tags.</p>
+            }
+            @if (sidebarSearchResults() !== null && searchResultSummary()) {
+              <p class="search-summary">{{ searchResultSummary() }}</p>
+            }
             <app-sidebar-tree
-              [modules]="repository.modules()"
+              [modules]="sidebarTreeModules()"
               [searchResults]="sidebarSearchResults()"
-              [searchQueryDisplay]="searchQuery()"
+              [searchQueryDisplay]="debouncedSearchQuery()"
             />
           </aside>
 
@@ -208,6 +235,22 @@ import {
       font-size: 1rem;
     }
 
+    .tag-filter {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem;
+      margin: 0.6rem 0 0.5rem;
+      padding: 0;
+      min-height: 0;
+    }
+
+    .sidebar-hint,
+    .search-summary {
+      margin: 0 0 0.5rem;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
     .workspace-heading {
       display: flex;
       align-items: center;
@@ -296,21 +339,11 @@ import {
   `,
 })
 export class TocComponent {
-  readonly searchQuery = signal('');
-  readonly sidebarSearchResults = computed(() => {
-    const q = this.searchQuery().trim();
-    return q ? this.search.search(q) : null;
-  });
+  private readonly searchInput$ = new Subject<string>();
 
-  activeConfigId = '';
-  configMessage = '';
-  private lastLoadedQueryConfigId: string | null = null;
-  readonly selectedModules = computed(() =>
-    this.viewState
-      .selectedModuleIds()
-      .map((id) => this.repository.findModuleById(id))
-      .filter((module): module is SopModule => module !== undefined),
-  );
+  readonly searchQuery = signal('');
+  readonly debouncedSearchQuery = signal('');
+  readonly selectedTags = signal(new Set<string>());
 
   readonly repository = inject(SopRepositoryService);
   private readonly search = inject(SearchService);
@@ -325,7 +358,62 @@ export class TocComponent {
     { initialValue: null },
   );
 
+  readonly allTags = computed(() => collectUniqueSortedTags(this.repository.modules()));
+
+  readonly selectedTagsArray = computed(() => [...this.selectedTags()].sort((a, b) => a.localeCompare(b)));
+
+  readonly sidebarTreeModules = computed(() =>
+    filterModuleTreeByTags(this.repository.modules(), this.selectedTags()),
+  );
+
+  readonly sidebarSearchResults = computed((): SearchResult[] | null => {
+    const q = this.debouncedSearchQuery().trim();
+    if (!q) {
+      return null;
+    }
+    let results = this.search.search(q);
+    const tags = this.selectedTags();
+    if (tags.size > 0) {
+      results = results.filter(
+        (r) =>
+          r.kind === 'term' || (r.item.tags ?? []).some((t) => tags.has(t)),
+      );
+    }
+    return results;
+  });
+
+  readonly searchResultSummary = computed(() => {
+    const results = this.sidebarSearchResults();
+    if (!results) {
+      return '';
+    }
+    const moduleCount = results.filter((r) => r.kind === 'module').length;
+    const termCount = results.filter((r) => r.kind === 'term').length;
+    const parts: string[] = [];
+    if (moduleCount > 0) {
+      parts.push(`${moduleCount} module${moduleCount === 1 ? '' : 's'}`);
+    }
+    if (termCount > 0) {
+      parts.push(`${termCount} term${termCount === 1 ? '' : 's'}`);
+    }
+    return parts.join(', ');
+  });
+
+  activeConfigId = '';
+  configMessage = '';
+  private lastLoadedQueryConfigId: string | null = null;
+  readonly selectedModules = computed(() =>
+    this.viewState
+      .selectedModuleIds()
+      .map((id) => this.repository.findModuleById(id))
+      .filter((module): module is SopModule => module !== undefined),
+  );
+
   constructor() {
+    this.searchInput$
+      .pipe(debounceTime(300), distinctUntilChanged(), takeUntilDestroyed())
+      .subscribe((q) => this.debouncedSearchQuery.set(q));
+
     effect(() => {
       const configId = this.queryConfigId();
       if (!configId || this.repository.loading()) {
@@ -337,6 +425,32 @@ export class TocComponent {
       this.lastLoadedQueryConfigId = configId;
       this.loadConfig(configId, false);
     });
+  }
+
+  onSearchInput(value: string): void {
+    this.searchQuery.set(value);
+    this.searchInput$.next(value);
+  }
+
+  clearSearch(): void {
+    this.searchQuery.set('');
+    this.debouncedSearchQuery.set('');
+    this.searchInput$.next('');
+  }
+
+  onTagFilterChange(event: MatChipListboxChange): void {
+    const v = event.value;
+    const next = new Set<string>();
+    if (Array.isArray(v)) {
+      for (const x of v) {
+        if (typeof x === 'string') {
+          next.add(x);
+        }
+      }
+    } else if (typeof v === 'string') {
+      next.add(v);
+    }
+    this.selectedTags.set(next);
   }
 
   openPresets(): void {
