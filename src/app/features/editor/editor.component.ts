@@ -71,7 +71,7 @@ import { ModuleEditDialogComponent, ModuleEditDialogResult } from './module-edit
             </div>
 
             <mat-tree [dataSource]="dataSource" [treeControl]="treeControl" class="sop-tree">
-              <mat-nested-tree-node *matTreeNodeDef="let node" matTreeNodeToggle>
+              <mat-nested-tree-node *matTreeNodeDef="let node">
                 <li class="tree-node">
                   <div class="tree-line">
                     @if (node.children.length) {
@@ -288,10 +288,66 @@ export class EditorComponent {
   newTermLabel = '';
   newDefinition = '';
 
+  /** Set before `updateSopTree` in `addChildModule`; applied when the tree effect runs. */
+  private pendingAutoExpandModuleId: string | null = null;
+
   constructor() {
     effect(() => {
+      const expandedIds = this.collectExpandedModuleIds(this.dataSource.data ?? []);
       this.dataSource.data = this.cms.sopTree();
+      this.expandNodesById(this.dataSource.data ?? [], expandedIds);
+      const pendingId = this.pendingAutoExpandModuleId;
+      if (pendingId) {
+        const node = this.findModuleById(this.dataSource.data ?? [], pendingId);
+        if (node) {
+          this.treeControl.expand(node);
+        }
+        this.pendingAutoExpandModuleId = null;
+      }
     });
+  }
+
+  private collectExpandedModuleIds(nodes: SopModule[]): Set<string> {
+    const ids = new Set<string>();
+    const walk = (list: SopModule[]): void => {
+      for (const n of list) {
+        if (this.treeControl.isExpanded(n)) {
+          ids.add(n.id);
+        }
+        if (n.children.length) {
+          walk(n.children);
+        }
+      }
+    };
+    walk(nodes);
+    return ids;
+  }
+
+  private expandNodesById(nodes: SopModule[], ids: Set<string>): void {
+    const walk = (list: SopModule[]): void => {
+      for (const n of list) {
+        if (ids.has(n.id)) {
+          this.treeControl.expand(n);
+        }
+        if (n.children.length) {
+          walk(n.children);
+        }
+      }
+    };
+    walk(nodes);
+  }
+
+  private findModuleById(nodes: SopModule[], id: string): SopModule | null {
+    for (const n of nodes) {
+      if (n.id === id) {
+        return n;
+      }
+      const found = this.findModuleById(n.children, id);
+      if (found) {
+        return found;
+      }
+    }
+    return null;
   }
 
   addGlossaryTerm(): void {
@@ -337,10 +393,10 @@ export class EditorComponent {
 
   addChildModule(parent: SopModule): void {
     const title = 'New child';
-    this.cms.updateSopTree((nodes) => {
-      const id = uniqueModuleId(title, nodes);
-      return addChildModule(nodes, parent.id, newEmptyModule(title, id));
-    });
+    const tree = this.cms.sopTree();
+    const id = uniqueModuleId(title, tree);
+    this.pendingAutoExpandModuleId = id;
+    this.cms.updateSopTree((nodes) => addChildModule(nodes, parent.id, newEmptyModule(title, id)));
   }
 
   editModule(node: SopModule): void {
