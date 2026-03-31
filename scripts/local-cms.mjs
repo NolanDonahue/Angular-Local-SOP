@@ -214,7 +214,8 @@ app.post('/api/assets/images', upload.single('image'), async (req, res) => {
   }
 });
 
+const loopbackHost = '127.0.0.1';
 const selectedPort = await resolveServerPort();
-app.listen(selectedPort, () =>
-  console.log(`Dev CMS Server running on http://localhost:${selectedPort}`),
+app.listen(selectedPort, loopbackHost, () =>
+  console.log(`Dev CMS Server running on http://${loopbackHost}:${selectedPort}`),
 );

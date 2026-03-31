@@ -4,8 +4,11 @@ import { dirname, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
 import { fileURLToPath } from 'node:url';
 
+import { publicAssetsImageSrc, resolveSafeImagePath } from './lib/safe-image-path.mjs';
+
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const projectRoot = resolve(__dirname, '..');
+const imagesRoot = resolve(projectRoot, 'src/assets/images');
 
 /** @param {string[]} argv */
 function resolveImageMode(argv) {
@@ -83,24 +86,33 @@ function parseContent(contentString, glossaryTerms) {
 
     if (match[1]) {
       const imageFilename = match[1].trim();
-      const imagePath = resolve(projectRoot, `src/assets/images/${imageFilename}`);
+      const imagePath = resolveSafeImagePath(imagesRoot, imageFilename);
 
-      const imageSegment = {
-        type: 'image',
-        src: `assets/images/${imageFilename}`,
-        alt: match[2] ? match[2].trim() : 'SOP Image',
-      };
+      if (!imagePath) {
+        console.warn(`⚠️ Rejected unsafe image path in SOP content: ${imageFilename}`);
+        segments.push({
+          type: 'image',
+          src: 'assets/images/__invalid-reference__',
+          alt: match[2] ? match[2].trim() : 'SOP Image',
+        });
+      } else {
+        const imageSegment = {
+          type: 'image',
+          src: publicAssetsImageSrc(imagesRoot, imagePath),
+          alt: match[2] ? match[2].trim() : 'SOP Image',
+        };
 
-      if (imageMode === 'inline') {
-        try {
-          const imageBuffer = readFileSync(imagePath);
-          imageSegment.base64Data = imageBuffer.toString('base64');
-        } catch {
-          console.warn(`⚠️ Could not read image for base64 encoding: ${imagePath}`);
+        if (imageMode === 'inline') {
+          try {
+            const imageBuffer = readFileSync(imagePath);
+            imageSegment.base64Data = imageBuffer.toString('base64');
+          } catch {
+            console.warn(`⚠️ Could not read image for base64 encoding: ${imagePath}`);
+          }
         }
-      }
 
-      segments.push(imageSegment);
+        segments.push(imageSegment);
+      }
     } else if (match[3]) {
       const termId = match[3].trim().toLowerCase();
       const termExists = glossaryTerms.some((t) => t.id === termId);
@@ -137,7 +149,8 @@ function toAssetsImagePath(imageSrc) {
   if (!cleaned.startsWith('assets/images/')) {
     return null;
   }
-  return resolve(projectRoot, 'src', cleaned);
+  const relativePart = cleaned.slice('assets/images/'.length);
+  return resolveSafeImagePath(imagesRoot, relativePart);
 }
 
 function readImageBase64(imageSrc) {
@@ -173,18 +186,35 @@ function normalizeContentSegments(content) {
       return segment;
     }
 
+    let imageSeg = segment;
+    if (typeof s.src === 'string') {
+      const cleaned = s.src.trim().replace(/^\.?\//, '');
+      if (cleaned.startsWith('assets/images/')) {
+        const relativePart = cleaned.slice('assets/images/'.length);
+        const abs = resolveSafeImagePath(imagesRoot, relativePart);
+        if (!abs) {
+          console.warn(`⚠️ Rejected unsafe image src in SOP data: ${s.src}`);
+          imageSeg = { ...s, src: 'assets/images/__invalid-reference__' };
+        } else {
+          imageSeg = { ...s, src: publicAssetsImageSrc(imagesRoot, abs) };
+        }
+      }
+    }
+
+    const im = /** @type {Record<string, unknown>} */ (imageSeg);
+
     if (imageMode === 'external') {
       // External mode never ships inlined base64 payloads.
-      const imageWithoutBase64 = { ...s };
+      const imageWithoutBase64 = { ...im };
       delete imageWithoutBase64.base64Data;
       return imageWithoutBase64;
     }
 
     const base64Data =
-      typeof s.base64Data === 'string' && s.base64Data.length > 0
-        ? s.base64Data
-        : readImageBase64(s.src);
-    return base64Data ? { ...s, base64Data } : s;
+      typeof im.base64Data === 'string' && im.base64Data.length > 0
+        ? im.base64Data
+        : readImageBase64(im.src);
+    return base64Data ? { ...im, base64Data } : imageSeg;
   });
 }
 
